@@ -1,38 +1,89 @@
 import pygame
 import pygame_gui
-import sys
 from tkinter import messagebox
 
+""" CONSTANTS """
 SCREEN_SIZE = (1024, 900)  # width ,height
+WHITE_COLOR = (255, 255, 255)
+GREY_COLOR = (128, 128, 128)
+TEXT_COLOR = (127, 0, 255)
+ELEMENT_POS = (355, 590, 290, 55)  # x , y , width , height
+TEXT_POS = (482.5, 590)
+TEN = 10
+
+
+class StackElement:
+    def __init__(self,
+                 window_surface: pygame.Surface,
+                 text: str,
+                 element_color: tuple[int, int, int],
+                 text_color: tuple[int, int, int] = TEXT_COLOR,
+                 font_size: int = 20):
+        self.element: pygame.Rect = pygame.Rect(ELEMENT_POS)
+        self.text_pos: tuple[float, float] = TEXT_POS  # text_pos
+        self.element_color = element_color
+        self.__text = text
+        self.text_view = pygame.font.SysFont("arial", font_size, True, True).render(text, True, text_color)
+        self.windows_surface = window_surface
+
+    # def set_pos(self,text_pos: tuple[int, int], ):
+    def show(self):
+        pygame.draw.rect(self.windows_surface, self.element_color, self.element)
+        self.windows_surface.blit(self.text_view, self.text_pos)
+
+    def update(self, element_tracker: int):
+        x, y, w, h = ELEMENT_POS
+        y = y - h * (element_tracker % TEN) - TEN
+        x1, y1 = TEXT_POS
+        y1 = y1 - h * (element_tracker % TEN) - TEN
+        x1 = x1 - len(self.__text) * 4
+        self.text_pos = (x1, y1)
+        self.element = pygame.Rect((x, y, w, h))
+        return self
+
+    def __str__(self):
+        return self.__text
+
 
 class StackVisualizer:
     def __init__(self):
-        self.stack = []
+        self.stack: list[StackElement] = []
         self.limit = 20
-        self.stack_body = (350, 80, 300, 570) # x, y, width, height
+        self.element_tracker = 0
+        self.window_surface = pygame.display.set_mode(SCREEN_SIZE, pygame.RESIZABLE)
+        self.stack_body = (350, 80, 300, 560)  # x, y, width, height
         self.stack_position = (400, 200, 512, 220)  # x, y, width, height
 
     def push(self, element: str) -> None:
         if len(element) <= self.limit and element != "":
-            self.stack.append(element)
+            COLOR = WHITE_COLOR if (self.element_tracker % TEN) % 2 == 0 else GREY_COLOR
+            self.element_tracker += 1
+            self.stack.append(StackElement(window_surface=self.window_surface,
+                                           text=element, element_color=COLOR).update(self.element_tracker))
 
     def pop(self):
         if not self.stack:
             raise Exception("Stack is Empty , Nothing to Pop!")
+        self.element_tracker -= 1
         return self.stack.pop()
 
     def top(self):
         if not self.stack:
             return self.stack[-1]
 
+    def __show(self):
+        index: int = 0
+        for element in self.stack[-TEN:]:
+            element.update(index).show()
+            index += 1
+
     def run(self):
         pygame.init()
         pygame.display.set_caption('Stack Visualizer')
-        window_surface = pygame.display.set_mode(SCREEN_SIZE, pygame.RESIZABLE)
         background = pygame.Surface(SCREEN_SIZE)
         background.fill(pygame.Color('#000000'))
         manager = pygame_gui.UIManager(SCREEN_SIZE, 'theme.json')
-        container = pygame_gui.core.ui_container.UIContainer(window_surface.get_rect(), manager=manager)
+        container = pygame_gui.core.ui_container.UIContainer(self.window_surface.get_rect(), manager=manager)
         push_button_layout_rect = pygame.Rect(0, 0, 200, 80)
         push_button_layout_rect.bottomleft = (30, -50)
         push_button = pygame_gui.elements.UIButton(relative_rect=push_button_layout_rect,
@@ -55,7 +106,7 @@ class StackVisualizer:
         stack_body = pygame.Rect(self.stack_body)
         text_input.hide()
         text_flag = False
-        text_input_guide = pygame.font.SysFont("arial", 30, True, True, ).render(
+        text_input_guide = pygame.font.SysFont("arial", 30, True, True).render(
             "Please Enter an input up to 20 characters, Then press "
             "enter to push it:", True, (255, 255, 255))
         clock = pygame.time.Clock()
@@ -78,26 +129,28 @@ class StackVisualizer:
                     try:
                         print(self.pop())
                     except Exception as e:
-                        messagebox.askokcancel("Error",str(e),icon="error")
+                        messagebox.askokcancel("Error", str(e), icon="error")
                 if event.type == pygame_gui.UI_BUTTON_PRESSED and event.ui_element == push_button:
                     text_flag = True
                     text_input.show()
                     text_input.focus()
                 manager.process_events(event)
                 manager.update(time_delta)
-                window_surface.blit(background, (0, 0))
-                pygame.draw.rect(window_surface, (0, 255, 0), stack_body, 5, border_top_right_radius=0)#dont touch
-                pygame.draw.rect(window_surface, (232, 139, 0), pygame.Rect((355,590,290,55)), 5, border_top_right_radius=0)
-                pygame.draw.rect(window_surface, (51, 255, 255), pygame.Rect((355, 590-56, 290, 55)), 5,border_top_right_radius=0)
-                pygame.draw.rect(window_surface, (232, 139, 0), pygame.Rect((355, 590 - 56*2, 290, 55)), 5,border_top_right_radius=0)
-                pygame.draw.rect(window_surface, (51, 255, 255), pygame.Rect((355, 590 - 56*3, 290, 55)), 5,border_top_right_radius=0)
-                pygame.draw.rect(window_surface, (232, 139, 0), pygame.Rect((355, 590 - 56*4, 290, 55)), 5,border_top_right_radius=0)
-                pygame.draw.rect(window_surface, (197, 39, 189), pygame.Rect((355, 590 - 56*5, 290, 55)), 5,border_top_right_radius=0)
-                pygame.draw.rect(window_surface, (51, 255, 255), pygame.Rect((355, 590 - 56*6, 290, 55)), 5,border_top_right_radius=0)
-                pygame.draw.rect(window_surface, (197, 39, 189), pygame.Rect((355, 590 - 56*7, 290, 55)), 5,border_top_right_radius=0)
-                pygame.draw.rect(window_surface, (51, 255, 255), pygame.Rect((355, 590 - 56*8, 290, 55)), 5,border_top_right_radius=0)
-                pygame.draw.rect(window_surface, (197, 39, 189), pygame.Rect((355, 590 - 56*9, 290, 55)), 5,border_top_right_radius=0)
+                self.window_surface.blit(background, (0, 0))
+                pygame.draw.rect(self.window_surface, (0, 255, 0), stack_body, 5,
+                                 border_top_right_radius=0)  # dont touch
+                # pygame.draw.rect(self.window_surface, (255, 255, 255), pygame.Rect((355, 590-10, 290, 55)))
+                # pygame.draw.rect(self.window_surface, (128, 128, 128), pygame.Rect((355, 590 - 55-10, 290, 55)))
+                # pygame.draw.rect(self.window_surface, (255, 255, 255), pygame.Rect((355, 590 - 55 * 2-10, 290, 55)))
+                # pygame.draw.rect(self.window_surface, (128, 128, 128), pygame.Rect((355, 590 - 55 * 3-10, 290, 55)))
+                # pygame.draw.rect(self.window_surface, (255, 255, 255), pygame.Rect((355, 590 - 55 * 4-10, 290, 55)))
+                # pygame.draw.rect(self.window_surface, (128, 128, 128), pygame.Rect((355, 590 - 55 * 5-10, 290, 55)))
+                # pygame.draw.rect(self.window_surface, (255, 255, 255), pygame.Rect((355, 590 - 55 * 6-10, 290, 55)))
+                # pygame.draw.rect(self.window_surface, (128, 128, 128), pygame.Rect((355, 590 - 55 * 7-10, 290, 55)))
+                # pygame.draw.rect(self.window_surface, (255, 255, 255), pygame.Rect((355, 590 - 55 * 8-10, 290, 55)))
+                # pygame.draw.rect(self.window_surface, (128, 128, 128), pygame.Rect((355, 590 - 55 * 9-10, 290, 55)))
+                self.__show()
                 if text_flag:
-                    window_surface.blit(text_input_guide, (0, 0))
-                manager.draw_ui(window_surface)
+                    self.window_surface.blit(text_input_guide, (0, 0))
+                manager.draw_ui(self.window_surface)
             pygame.display.update()
