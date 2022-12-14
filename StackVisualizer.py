@@ -1,6 +1,9 @@
 import pygame
 import pygame_gui
 from tkinter import messagebox
+import tkinter
+root = tkinter.Tk()
+root.withdraw()
 
 """ CONSTANTS """
 SCREEN_SIZE = (1024, 900)  # width ,height
