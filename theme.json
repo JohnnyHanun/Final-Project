@@ -29,7 +29,7 @@
              "italic": "1",
              "regular_resource": {
                  "package": "pygame_gui",
-                 "resource": "C:\\Users\\yoyom\\Desktop\\Project\\venv\\Lib\\site-packages\\pygame_gui\\data\\FiraCode-Regular.ttf"
+                 "resource": "/Library/Python/3.9/site-packages/pygame_gui/data/FiraCode-Regular.ttf"
              },
              "misc": {
                  "border_width": "1",
