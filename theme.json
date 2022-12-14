@@ -1,8 +1,8 @@
 {
      "button": {
          "colours": {
-             "normal_bg": "#25292e",
-             "hovered_bg": "#35393e",
+             "normal_bg": "#321456",
+             "hovered_bg": "#456321",
              "disabled_bg": "#25292e",
              "selected_bg": "#25292e",
              "active_bg": "#193784",
@@ -29,7 +29,7 @@
              "italic": "1",
              "regular_resource": {
                  "package": "pygame_gui",
-                 "resource": "/Library/Python/3.9/site-packages/pygame_gui/data/FiraCode-Regular.ttf"
+                 "resource": "C:\\Users\\yoyom\\Desktop\\Project\\venv\\Lib\\site-packages\\pygame_gui\\data\\FiraCode-Regular.ttf"
              },
              "misc": {
                  "border_width": "1",
@@ -49,18 +49,24 @@
          }
      },
     "text_entry_line": {
+        "colours":
+         {
+             "dark_bg": "#321456",
+             "selected_bg": "#55595e",
+             "normal_text": "#AAAAAA",
+             "selected_text": "#FFFFFF",
+             "normal_border": "#FFFFFF"
+         },
         "font": {
             "name": "firaCode",
-            "size": "20",
-            "bold": "0",
+            "size": "23",
+            "bold": "",
             "italic": "1",
             "regular_resource": {
                 "package": "pygame_gui",
-                "resource": "FiraCode-Regular.ttf"
+                "resource": "C:\\Users\\yoyom\\Desktop\\Project\\venv\\Lib\\site-packages\\pygame_gui\\data\\FiraCode-Regular.ttf"
             }
         }
     }
 
-
- }
-
+}
