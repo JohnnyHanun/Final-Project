@@ -113,7 +113,6 @@ import StackVisualizer
 
 from Utils import  Utils
 if __name__ == "__main__":
-    #StackVisualizer.StackVisualizer().run()
-    for i in gen:
-        print(i)
+    StackVisualizer.StackVisualizer().run()
+
 
