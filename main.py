@@ -108,5 +108,12 @@
 # # if __name__ == "__main__":
 # #     main()
 import StackVisualizer
+
+
+
+from Utils import  Utils
 if __name__ == "__main__":
-    StackVisualizer.StackVisualizer().run()
+    #StackVisualizer.StackVisualizer().run()
+    for i in gen:
+        print(i)
+

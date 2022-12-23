@@ -4,7 +4,9 @@ from tkinter import messagebox
 import tkinter
 root = tkinter.Tk()
 root.withdraw()
-
+from pygame.locals import (
+    RLEACCEL,
+)
 """ CONSTANTS """
 SCREEN_SIZE = (1024, 900)  # width ,height
 WHITE_COLOR = (255, 255, 255)
