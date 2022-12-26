@@ -52,13 +52,52 @@ class Edge(pygame.sprite.Sprite):
         self.is_directed = is_directed
         self.surf = pygame.Surface(SCREEN_SIZE)
         if self.is_directed:
-            pygame.draw.line(self.surf, edge_color, start_point, end_point, 2)
-            x , y = end_point
-            pygame.draw.polygon(self.surf, edge_color, [(x+5,y+5),(x+5,y-5),(x-5,y+5)])
+            self.__draw_arrow()
         self.surf.set_colorkey((0, 0, 0), RLEACCEL)
         self.rect = self.surf.get_rect(center=(1024/2,900/2))
 
+    def __draw_arrow(self,
+            color: pygame.Color = WHITE_COLOR,
+            body_width: int = 4,
+            head_width: int = 15,
+            head_height: int = 15,
+    ):
+        start , end ,surface = pygame.Vector2(self.start_point) , pygame.Vector2(self.end_point), self.surf
+        arrow = start - end
+        angle = arrow.angle_to(pygame.Vector2(0, -1))
+        body_length = arrow.length() - head_height
 
+        # Create the triangle head around the origin
+        head_verts = [
+            pygame.Vector2(0, head_height / 2),  # Center
+            pygame.Vector2(head_width / 2, -head_height / 2),  # Bottomright
+            pygame.Vector2(-head_width / 2, -head_height / 2),  # Bottomleft
+        ]
+        # Rotate and translate the head into place
+        translation = pygame.Vector2(0, arrow.length() - (head_height / 2)).rotate(-angle)
+        for i in range(len(head_verts)):
+            head_verts[i].rotate_ip(-angle)
+            head_verts[i] += translation
+            head_verts[i] += start
+
+        pygame.draw.polygon(surface, color, head_verts)
+
+        # Stop weird shapes when the arrow is shorter than arrow head
+        if arrow.length() >= head_height:
+            # Calculate the body rect, rotate and translate into place
+            body_verts = [
+                pygame.Vector2(-body_width / 2, body_length / 2),  # Topleft
+                pygame.Vector2(body_width / 2, body_length / 2),  # Topright
+                pygame.Vector2(body_width / 2, -body_length / 2),  # Bottomright
+                pygame.Vector2(-body_width / 2, -body_length / 2),  # Bottomleft
+            ]
+            translation = pygame.Vector2(0, body_length / 2).rotate(-angle)
+            for i in range(len(body_verts)):
+                body_verts[i].rotate_ip(-angle)
+                body_verts[i] += translation
+                body_verts[i] += start
+
+            pygame.draw.polygon(surface, color, body_verts)
 
 
 class Graph_Simulator:
@@ -85,7 +124,7 @@ class Graph_Simulator:
                         # pygame.draw.polygon(self.window_surface, ,
                         # ((0, 100), (0, 200), (200, 200), (200, 300), (300, 150), (200, 0),
                         # (200, 100)))
-                        all_graph.add(Edge(None,None,(0, 0),pygame.mouse.get_pos()))
+                        all_graph.add(Edge(None,None,(1024, 900),pygame.mouse.get_pos()))
                     else:
                         node = Node(pygame.mouse.get_pos(), all_nodes)
                         all_nodes.add(node)
