@@ -1,3 +1,5 @@
+import time
+
 import pygame
 import pygame_gui
 from Utils import Utils
@@ -14,16 +16,19 @@ SCREEN_SIZE = (1024, 900)  # width ,height
 BLACK_COLOR = (0, 0, 0)
 WHITE_COLOR = (255, 255, 255)
 
+
 class Node(pygame.sprite.Sprite):
     def __init__(self,
                  center: tuple[int, int],
-                 all_nodes  # OBJECT
+                 all_nodes,  # OBJECT
+                 draw: bool = True
                  ):
         super(Node, self).__init__()
         self.center = center
         self.surf = pygame.Surface((2 * NODE_R, 2 * NODE_R))
         self.text_view = pygame.font.SysFont("arial", 25, True, True).render(next(NODE_NAME), True, (255, 255, 255))
-        pygame.draw.circle(self.surf, 'Green', (NODE_R, NODE_R), NODE_R)
+        if draw:
+           pygame.draw.circle(self.surf, 'Green', (NODE_R, NODE_R), NODE_R)
         self.surf.set_colorkey((0, 0, 0), RLEACCEL)
         self.rect = self.surf.get_rect(center=self.center)
         self.all_nodes = all_nodes
@@ -52,17 +57,17 @@ class Edge(pygame.sprite.Sprite):
         self.is_directed = is_directed
         self.surf = pygame.Surface(SCREEN_SIZE)
         if self.is_directed:
-            self.__draw_arrow()
+            self.draw_arrow()
         self.surf.set_colorkey((0, 0, 0), RLEACCEL)
-        self.rect = self.surf.get_rect(center=(1024/2,900/2))
+        self.rect = self.surf.get_rect(center=(1024 / 2, 900 / 2))
 
-    def __draw_arrow(self,
-            color: pygame.Color = WHITE_COLOR,
-            body_width: int = 4,
-            head_width: int = 15,
-            head_height: int = 15,
-    ):
-        start , end ,surface = pygame.Vector2(self.start_point) , pygame.Vector2(self.end_point), self.surf
+    def draw_arrow(self,
+                     color: pygame.Color=WHITE_COLOR,
+                     body_width: int = 4,
+                     head_width: int = 15,
+                     head_height: int = 15,
+                     ):
+        start, end, surface = pygame.Vector2(self.start_point), pygame.Vector2(self.end_point), self.surf
         arrow = start - end
         angle = arrow.angle_to(pygame.Vector2(0, -1))
         body_length = arrow.length() - head_height
@@ -100,19 +105,57 @@ class Edge(pygame.sprite.Sprite):
             pygame.draw.polygon(surface, color, body_verts)
 
 
+
 class Graph_Simulator:
     def __init__(self):
-        self.graph: dict[Node, list[Node]] = {}
+        self.graph: dict[Node, list[Edge]] = {}
         self.window_surface = pygame.display.set_mode(SCREEN_SIZE, pygame.RESIZABLE)
+        self.all_nodes = pygame.sprite.Group()
+        self.all_graph = pygame.sprite.Group()
+        self.clock = pygame.time.Clock()
+
+    def __is_in_node(self, position: tuple[int, int]):
+        tmp_node = Node(position, None, False)
+        node = pygame.sprite.spritecollideany(tmp_node, self.all_nodes)
+        return None if not node else node
+
+
+    def __add_edge(self,position : tuple[int, int]):
+        mid: Node = self.__is_in_node(position)
+        if not mid:
+            return
+        while True:
+            self.clock.tick(60)
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                    exit()
+            self.window_surface.fill(pygame.Color("black"))
+            for e in self.all_graph:
+                self.window_surface.blit(e.surf, e.rect)
+            mouse_pos = pygame.mouse.get_pos()
+            center = pygame.Vector2(mid.center)
+            if mouse_pos[0] < mid.center[0]:
+                center.x -= NODE_R
+            if mouse_pos[0] > mid.center[0]:
+                center.x += NODE_R
+            if mouse_pos[1] < mid.center[1]:
+                center.y -= NODE_R
+            if mouse_pos[1] > mid.center[1]:
+                center.y += NODE_R
+
+
+            end = pygame.Vector2(pygame.mouse.get_pos())
+            tmp_edge = Edge(None, None, center, end)
+            self.window_surface.blit(tmp_edge.surf, tmp_edge.rect)
+            pygame.display.flip()
+
 
     def run(self):
         pygame.init()
         pygame.display.set_caption('Graph Visualizer')
         background = pygame.Surface(SCREEN_SIZE)
         background.fill(pygame.Color(BLACK_COLOR))
-        clock = pygame.time.Clock()
-        all_nodes = pygame.sprite.Group()
-        all_graph = pygame.sprite.Group()
         while True:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
@@ -121,21 +164,19 @@ class Graph_Simulator:
                 if event.type == pygame.MOUSEBUTTONDOWN and event.button == LEFT_MOUSE:
                     key_pressed = pygame.key.get_pressed()
                     if key_pressed[pygame.K_LSHIFT]:
-                        # pygame.draw.polygon(self.window_surface, ,
-                        # ((0, 100), (0, 200), (200, 200), (200, 300), (300, 150), (200, 0),
-                        # (200, 100)))
-                        all_graph.add(Edge(None,None,(1024, 900),pygame.mouse.get_pos()))
+                        self.__add_edge(pygame.mouse.get_pos())
+                        #self.all_graph.add(Edge(None, None, (1024, 900), pygame.mouse.get_pos()))
                     else:
-                        node = Node(pygame.mouse.get_pos(), all_nodes)
-                        all_nodes.add(node)
-                        all_graph.add(node)
+                        node = Node(pygame.mouse.get_pos(), self.all_nodes)
+                        self.all_nodes.add(node)
+                        self.all_graph.add(node)
                 # if event.type == pygame.KEYDOWN and event.key == pygame.K_LSHIFT:
                 # self.window_surface.blit(background, (0, 0))
             # pygame.display.update()
             # self.window_surface.fill('black')
-            for e in all_graph:
+            for e in self.all_graph:
                 self.window_surface.blit(e.surf, e.rect)
-                #e.update2()
+                # e.update2()
             # for e in all_graph:
             #     while True:
             #         tmp_group = pygame.sprite.Group()
@@ -148,4 +189,4 @@ class Graph_Simulator:
             #         if pygame.sprite.spritecollideany(e, all_graph) != e:
             #             while pygame.sprite.spritecollide()
             pygame.display.flip()
-            clock.tick(60)
+            self.clock.tick(60)
