@@ -1,5 +1,6 @@
+import math
 import time
-
+import numpy
 import pygame
 import pygame_gui
 from Utils import Utils
@@ -26,17 +27,13 @@ class Node(pygame.sprite.Sprite):
         super(Node, self).__init__()
         self.center = center
         self.surf = pygame.Surface((2 * NODE_R, 2 * NODE_R))
-        self.text_view = pygame.font.SysFont("arial", 25, True, True).render(next(NODE_NAME), True, (255, 255, 255))
+        self.text_view = pygame.font.SysFont("arial", 25, True, True).render("" if not draw else next(NODE_NAME), True, (255, 255, 255))
         if draw:
            pygame.draw.circle(self.surf, 'Green', (NODE_R, NODE_R), NODE_R)
         self.surf.set_colorkey((0, 0, 0), RLEACCEL)
         self.rect = self.surf.get_rect(center=self.center)
         self.all_nodes = all_nodes
-
-    def update2(self):
-        # print(self.rect.x,self.rect.y,self.rect.width,self.rect.height)
         self.surf.blit(self.text_view, (NODE_R // 2 + 15, NODE_R // 2 + 10))
-
 
 class Edge(pygame.sprite.Sprite):
     def __init__(self,
@@ -118,35 +115,52 @@ class Graph_Simulator:
         tmp_node = Node(position, None, False)
         node = pygame.sprite.spritecollideany(tmp_node, self.all_nodes)
         return None if not node else node
-
+    def __calc_position(self,mouse_pos: tuple[int, int],center: tuple[int, int]):
+        theta = math.atan2(mouse_pos[1] - center[1], mouse_pos[0] - center[0])
+        radius = NODE_R
+        centerX = center[0]
+        centerY = center[1]
+        centerX = centerX + (radius * math.cos(theta))
+        centerY = centerY + (radius * math.sin(theta))
+        start = pygame.Vector2((centerX, centerY))
+        end = pygame.Vector2(mouse_pos)
+        return start , end
 
     def __add_edge(self,position : tuple[int, int]):
         mid: Node = self.__is_in_node(position)
         if not mid:
             return
+        start, end = 0, 0
         while True:
             self.clock.tick(60)
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     pygame.quit()
                     exit()
+                if event.type == pygame.MOUSEBUTTONDOWN and event.button == LEFT_MOUSE:
+                    mouse_pos = pygame.mouse.get_pos()
+                    tmp : Node = self.__is_in_node(pygame.mouse.get_pos())
+                    if tmp:
+                        for edge in self.graph[mid]:
+                            if edge.destination == tmp:
+                                self.window_surface.fill(pygame.Color("black"))
+                                return
+                        self.window_surface.fill(pygame.Color("black"))
+                        end1 , end2 = self.__calc_position(mid.center, tmp.center)
+                        edge = Edge(mid, tmp, start, end1)
+                        self.graph[mid].append(edge)
+                        self.all_graph.add(edge)
+                        return
+                    else:
+                        self.window_surface.fill(pygame.Color("black"))
+                        return
+
             self.window_surface.fill(pygame.Color("black"))
             for e in self.all_graph:
                 self.window_surface.blit(e.surf, e.rect)
-            mouse_pos = pygame.mouse.get_pos()
-            center = pygame.Vector2(mid.center)
-            if mouse_pos[0] < mid.center[0]:
-                center.x -= NODE_R
-            if mouse_pos[0] > mid.center[0]:
-                center.x += NODE_R
-            if mouse_pos[1] < mid.center[1]:
-                center.y -= NODE_R
-            if mouse_pos[1] > mid.center[1]:
-                center.y += NODE_R
+            start, end = self.__calc_position(pygame.mouse.get_pos(), mid.center)
 
-
-            end = pygame.Vector2(pygame.mouse.get_pos())
-            tmp_edge = Edge(None, None, center, end)
+            tmp_edge = Edge(None, None, start, end)
             self.window_surface.blit(tmp_edge.surf, tmp_edge.rect)
             pygame.display.flip()
 
@@ -170,6 +184,7 @@ class Graph_Simulator:
                         node = Node(pygame.mouse.get_pos(), self.all_nodes)
                         self.all_nodes.add(node)
                         self.all_graph.add(node)
+                        self.graph[node] = []
                 # if event.type == pygame.KEYDOWN and event.key == pygame.K_LSHIFT:
                 # self.window_surface.blit(background, (0, 0))
             # pygame.display.update()
