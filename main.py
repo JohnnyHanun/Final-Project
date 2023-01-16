@@ -1,4 +1,6 @@
 from Graph import Graph_Simulator
+from Utils import Utils
+import time
 if __name__ == '__main__':
     Graph_Simulator().run()
 
