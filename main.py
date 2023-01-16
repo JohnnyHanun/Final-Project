@@ -1,4 +1,6 @@
 from Graph import Graph_Simulator
+from Utils import Utils
+import time
 if __name__ == '__main__':
     Graph_Simulator().run()
 
@@ -128,30 +130,39 @@ def draw_arrow(
 
         pygame.draw.polygon(surface, color, body_verts)
 
+from numpy import ones,vstack
+from numpy.linalg import lstsq
+import __future__
+import math
 
-pygame.init()
-
-CLOCK = pygame.time.Clock()
-FPS = 60
-
-WIDTH = 1280
-HEIGHT = 720
-RESOLUTION = (WIDTH, HEIGHT)
-SCREEN = pygame.display.set_mode(RESOLUTION)
-
-while True:
-    CLOCK.tick(FPS)
-
-    for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                pygame.quit()
-                exit()
-
-    SCREEN.fill(pygame.Color("black"))
-
-    center = pygame.Vector2(WIDTH / 2, HEIGHT / 2)
-    end = pygame.Vector2(pygame.mouse.get_pos())
-    draw_arrow(SCREEN, center, end, pygame.Color("dodgerblue"), 10, 20, 12)
-
-    pygame.display.flip()
+points = [(0, 0),(8, 8)]
+x_coords, y_coords = zip(*points)
+A = vstack([x_coords,ones(len(x_coords))]).T
+m, c = lstsq(A, y_coords,-1)[0]
+print("Line Solution is y = {m}x + {c}".format(m=int(m),c=int(c),rcond=-1))
+# pygame.init()
+#
+# CLOCK = pygame.time.Clock()
+# FPS = 60
+#
+# WIDTH = 1280
+# HEIGHT = 720
+# RESOLUTION = (WIDTH, HEIGHT)
+# SCREEN = pygame.display.set_mode(RESOLUTION)
+#
+# while True:
+#     CLOCK.tick(FPS)
+#
+#     for event in pygame.event.get():
+#             if event.type == pygame.QUIT:
+#                 pygame.quit()
+#                 exit()
+#
+#     SCREEN.fill(pygame.Color("black"))
+#
+#     center = pygame.Vector2(WIDTH / 2, HEIGHT / 2)
+#     end = pygame.Vector2(pygame.mouse.get_pos())
+#     draw_arrow(SCREEN, center, end, pygame.Color("dodgerblue"), 10, 20, 12)
+#
+#     pygame.display.flip()
 
