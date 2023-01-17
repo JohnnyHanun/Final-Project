@@ -29,12 +29,33 @@ class Node(pygame.sprite.Sprite):
         self.surf = pygame.Surface((2 * NODE_R, 2 * NODE_R))
         self.text_view = pygame.font.SysFont("arial", 25, True, True).render("" if not draw else next(NODE_NAME), True,
                                                                              (255, 255, 255))
+        self.is_clicked = False
         if draw:
             pygame.draw.circle(self.surf, 'Green', (NODE_R, NODE_R), NODE_R)
         self.surf.set_colorkey((0, 0, 0), RLEACCEL)
         self.rect = self.surf.get_rect(center=self.center)
         self.all_nodes = all_nodes
         self.surf.blit(self.text_view, (NODE_R // 2 + 15, NODE_R // 2 + 10))
+    def clicked_on(self):
+        self.surf.fill(pygame.Color('Black'))
+        pygame.draw.circle(self.surf, 'Red', (NODE_R, NODE_R), NODE_R)
+        pygame.draw.circle(self.surf, 'Green',(NODE_R,NODE_R),NODE_R-2)
+        self.surf.set_colorkey((0, 0, 0), RLEACCEL)
+        self.rect = self.surf.get_rect(center=self.center)
+        self.surf.blit(self.text_view, (NODE_R // 2 + 15, NODE_R // 2 + 10))
+        self.is_clicked = True
+    def clicked_off(self):
+        pygame.draw.circle(self.surf, 'Green', (NODE_R, NODE_R), NODE_R)
+        self.surf.set_colorkey((0, 0, 0), RLEACCEL)
+        self.rect = self.surf.get_rect(center=self.center)
+        self.surf.blit(self.text_view, (NODE_R // 2 + 15, NODE_R // 2 + 10))
+        self.is_clicked = False
+    def move(self, mouse_pos: tuple[int, int]):
+        self.center = mouse_pos
+        self.clicked_on()
+
+
+
 
 
 class Edge(pygame.sprite.Sprite):
@@ -187,21 +208,11 @@ class Graph_Simulator:
                 if event.type == pygame.MOUSEBUTTONDOWN and event.button == LEFT_MOUSE:
                     # mouse_pos = pygame.mouse.get_pos()
                     tmp: Node = self.__is_in_node(pygame.mouse.get_pos())
-                    if tmp:
+                    if tmp and tmp != mid:
                         for edge in self.graph[mid]:
                             if edge.destination == tmp:
                                 self.window_surface.fill(pygame.Color("black"))
                                 return
-                        for edge in self.graph[tmp]:
-                            if edge.destination == mid:
-                                s1, e1 = self.__calc_position(mid.center, tmp.center,math.pi/2)
-                                self.graph[tmp].remove(edge)
-                                self.all_graph.remove(edge)
-                                s1 , e1 = self.__calc_position(s1, mid.center)
-                                e = Edge(tmp, mid, e1, s1)
-                                self.graph[tmp].append(e)
-                                self.all_graph.add(e)
-                                break
                         self.window_surface.fill(pygame.Color("black"))
                         end1, end2 = self.__calc_position(mid.center, tmp.center)
                         edge = Edge(mid, tmp, start, end1)
@@ -226,6 +237,8 @@ class Graph_Simulator:
         pygame.display.set_caption('Graph Visualizer')
         background = pygame.Surface(SCREEN_SIZE)
         background.fill(pygame.Color(BLACK_COLOR))
+        drag = False
+        global_node : Node = None
         while True:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
@@ -236,14 +249,56 @@ class Graph_Simulator:
                     if key_pressed[pygame.K_LSHIFT]:
                         self.__add_edge(pygame.mouse.get_pos())
                         # self.all_graph.add(Edge(None, None, (1024, 900), pygame.mouse.get_pos()))
+                    elif key_pressed[pygame.K_BACKSPACE]:
+                        nd = self.__is_in_node(pygame.mouse.get_pos())
+                        if nd:
+                            for v in self.graph[nd]:
+                                self.all_graph.remove(v)
+                            self.graph.pop(nd)
+                            self.all_graph.remove(nd)
+                            self.all_nodes.remove(nd)
+                            for node,edges in self.graph.items():
+                                new_lst : list[Edge] = []
+                                for edge in edges:
+                                    if edge.destination != nd:
+                                        new_lst.append(edge)
+                                    else:
+                                        self.all_graph.remove(edge)
+                                if len(new_lst) != len(self.graph[node]):
+                                    self.graph[node] = new_lst
+
+
                     else:
                         mouse_pos = pygame.mouse.get_pos()
-                        if not self.__is_in_node(mouse_pos):
+                        nd = self.__is_in_node(mouse_pos)
+                        if not nd:
                             node = Node(mouse_pos, self.all_nodes)
                             self.all_nodes.add(node)
                             self.all_graph.add(node)
                             self.graph[node] = []
-                            #self.__stabling_graph()
+                        else:
+                            if not nd.is_clicked:
+                                drag = True
+                                global_node = nd
+                                global_node.clicked_on()
+
+                elif event.type == pygame.MOUSEMOTION:
+                    if drag:
+                        global_node.move(event.pos)
+                elif event.type == pygame.MOUSEBUTTONUP:
+                    if drag:
+                        drag = False
+                        global_node.clicked_off()
+                        global_node = None
+
+
+
+
+
+
+
+
+            self.window_surface.fill(pygame.Color('Black'))
             for e in self.all_graph:
                 self.window_surface.blit(e.surf, e.rect)
                 # e.update2()

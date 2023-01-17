@@ -130,16 +130,16 @@ def draw_arrow(
 
         pygame.draw.polygon(surface, color, body_verts)
 
-from numpy import ones,vstack
-from numpy.linalg import lstsq
+# from numpy import ones,vstack
+# from numpy.linalg import lstsq
 import __future__
 import math
 
 points = [(0, 0),(8, 8)]
 x_coords, y_coords = zip(*points)
-A = vstack([x_coords,ones(len(x_coords))]).T
-m, c = lstsq(A, y_coords,-1)[0]
-print("Line Solution is y = {m}x + {c}".format(m=int(m),c=int(c),rcond=-1))
+# A = vstack([x_coords,ones(len(x_coords))]).T
+# m, c = lstsq(A, y_coords,-1)[0]
+# print("Line Solution is y = {m}x + {c}".format(m=int(m),c=int(c),rcond=-1))
 # pygame.init()
 #
 # CLOCK = pygame.time.Clock()
