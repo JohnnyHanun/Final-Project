@@ -140,7 +140,37 @@ class Graph_Simulator:
         return False
 
     def __stabling_graph(self):
-        pass
+        L0 = 250 # nominal distance in pixles
+        K1, K2 = 10, 1 # force/distance
+        V = 3 #pixel/frem
+        TOL = 5
+        for v in self.all_nodes:
+            fx, fy = 0, 0
+            for u in self.all_nodes:
+                if v == u:
+                      continue
+                dx = u.center[0] - v.center[0]
+                dy = u.center[1] - v.center[1]
+                dist = math.sqrt((dx**2) + (dy**2)) + 1e-10
+                my_k = K1 if self.__is_an_edge(self.graph[u], v) else K2
+                if dist > L0 + TOL:
+                    fx += my_k * (dx/dist)
+                    fy += my_k * (dy / dist)
+                elif dist < L0 - TOL:
+                    fx -= my_k * (dx / dist)
+                    fy -= my_k * (dy / dist)
+            norm_f = math.sqrt((fx**2) + (fy**2)) + 1e-10
+            fx /= norm_f
+            fy /= norm_f
+            new_x = v.center[0] + (fx * V)
+            new_y = v.center[1] + (fy * V)
+            new_x = max(50, min(1024-50, new_x))
+            new_y = max(50, min(900-50, new_y))
+            v.center = (new_x, new_y)
+            v.rect = v.surf.get_rect(center=v.center)
+
+
+
         # stable = [False for i in range(len(self.all_nodes))]  # |V| Trues
         # EPS = 0.1
         # K1, K2, l0 = 0.2, 0.3, 1000
@@ -171,8 +201,7 @@ class Graph_Simulator:
         #         if validation:
         #             stable[index] = True
         #         index += 1
-        # import random
-        # for u in self.all_graph:
+
         #
         #
         #
@@ -384,7 +413,7 @@ class Graph_Simulator:
 
 
 
-
+            self.__stabling_graph()
             self.window_surface.fill(pygame.Color('Black'))
             for e in self.all_graph:
                 self.window_surface.blit(e.surf, e.rect)
