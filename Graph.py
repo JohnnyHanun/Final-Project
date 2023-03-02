@@ -36,6 +36,7 @@ class Node(pygame.sprite.Sprite):
         self.rect = self.surf.get_rect(center=self.center)
         self.all_nodes = all_nodes
         self.surf.blit(self.text_view, (NODE_R // 2 + 15, NODE_R // 2 + 10))
+
     def clicked_on(self):
         self.surf.fill(pygame.Color('Black'))
         pygame.draw.circle(self.surf, 'Red', (NODE_R, NODE_R), NODE_R)
@@ -44,18 +45,17 @@ class Node(pygame.sprite.Sprite):
         self.rect = self.surf.get_rect(center=self.center)
         self.surf.blit(self.text_view, (NODE_R // 2 + 15, NODE_R // 2 + 10))
         self.is_clicked = True
+
     def clicked_off(self):
         pygame.draw.circle(self.surf, 'Green', (NODE_R, NODE_R), NODE_R)
         self.surf.set_colorkey((0, 0, 0), RLEACCEL)
         self.rect = self.surf.get_rect(center=self.center)
         self.surf.blit(self.text_view, (NODE_R // 2 + 15, NODE_R // 2 + 10))
         self.is_clicked = False
+
     def move(self, mouse_pos: tuple[int, int]):
         self.center = mouse_pos
         self.clicked_on()
-
-
-
 
 
 class Edge(pygame.sprite.Sprite):
@@ -85,7 +85,7 @@ class Edge(pygame.sprite.Sprite):
                    color: pygame.Color = WHITE_COLOR,
                    body_width: int = 4,
                    head_width: int = 15,
-                   head_height: int = 15,
+                   head_height: int = 15, pos=0
                    ):
         start, end, surface = pygame.Vector2(self.start_point), pygame.Vector2(self.end_point), self.surf
         arrow = start - end
@@ -122,6 +122,23 @@ class Edge(pygame.sprite.Sprite):
                 body_verts[i] += translation
                 body_verts[i] += start
             pygame.draw.polygon(surface, color, body_verts)
+            self.__draw_weight()
+
+    def __draw_weight(self):
+        start, end, surface = pygame.Vector2(self.start_point), pygame.Vector2(self.end_point), self.surf
+
+        w = pygame.font.SysFont("arial", 25, True, True).render("1" if self.weight == -1 else str(self.weight), True,
+                                                                (0, 255, 0))
+        middleX = (start.x + end.x) / 2
+        middleY = (start.y + end.y) / 2
+        print(start, end)
+        text_rect = w.get_rect()
+        text_rect.center = (middleX, middleY-25)
+        if abs(start.x - end.x) <= 100:
+            text_rect.center = (middleX+15, middleY)
+
+        surface.blit(w, text_rect)
+
 
 
 class Graph_Simulator:
@@ -212,6 +229,15 @@ class Graph_Simulator:
         node = pygame.sprite.spritecollideany(tmp_node, self.all_nodes)
         return None if not node else node
 
+    def __is_in_edge(self, position: tuple[int, int]):
+        for lst in self.graph.values():
+            for e in lst:
+                print(e.destination.text_view)
+        # edge = pygame.sprite.spritecollideany(tmp_edge, self.all_nodes)
+        # print(edge)
+        # return None if not edge else edge
+
+
     def __calc_position(self, mouse_pos: tuple[int, int], center: tuple[int, int], angle_to_add: float = 0):
         theta = math.atan2(mouse_pos[1] - center[1], mouse_pos[0] - center[0]) + angle_to_add
         radius = NODE_R
@@ -222,6 +248,20 @@ class Graph_Simulator:
         start = pygame.Vector2((centerX, centerY))
         end = pygame.Vector2(mouse_pos)
         return start, end
+
+    def __two_way_edge(self, edge, src, dst, angle=25):
+
+        start, end = self.__calc_position(src.center, dst.center, -angle)
+        end1, end2 = self.__calc_position(dst.center, src.center, angle)
+        edge.start_point = start
+        edge.end_point = end1
+        edge.surf.fill(BLACK_COLOR)
+        edge.draw_arrow()
+        start, end = self.__calc_position(src.center, dst.center, angle)
+        end1, end2 = self.__calc_position(dst.center, src.center, -angle)
+        newEdge = Edge(src, dst, end1, start)
+        self.graph[src].append(newEdge)
+        self.all_graph.add(newEdge)
 
     def __add_edge(self, position: tuple[int, int]):
         mid: Node = self.__is_in_node(position)
@@ -245,39 +285,15 @@ class Graph_Simulator:
                         self.window_surface.fill(pygame.Color("black"))
                         for edge in self.graph[tmp]:
                             if edge.destination == mid:
-                                angle = 25
-                                start, end = self.__calc_position(mid.center, tmp.center, -angle)
-                                end1, end2 = self.__calc_position(tmp.center, mid.center, angle)
-                                edge.start_point = start
-                                edge.end_point = end1
-                                edge.surf.fill(BLACK_COLOR)
-                                edge.draw_arrow()
-                                start, end = self.__calc_position(mid.center, tmp.center, angle)
-                                end1, end2 = self.__calc_position(tmp.center, mid.center, -angle)
-                                newEdge = Edge(mid, tmp, end1, start)
-                                self.graph[mid].append(newEdge)
-                                self.all_graph.add(newEdge)
-
-
-                                # end1, end2 = self.__calc_position(mid.center, tmp.center, angle)
-                                # start, end = self.__calc_position(pygame.mouse.get_pos(), mid.center, -angle)
-                                # newEdge = Edge(mid, tmp, start, end1)
-                                # self.graph[mid].append(newEdge)
-                                # self.all_graph.add(newEdge)
-                                # self.all_graph.remove(edge)
-                                # self.graph[tmp].remove(edge)
-                                # end1, end2 = self.__calc_position(tmp.center, mid.center, -angle)
-                                # start, end = self.__calc_position(mid.center, tmp.center, angle)
-                                # edge = Edge(tmp, mid, start, end1)
-                                # self.all_graph.add(edge)
-                                # self.graph[tmp].append(edge)
-
+                                self.__two_way_edge(edge, mid, tmp, 25)
                                 return
+
                         end1, end2 = self.__calc_position(mid.center, tmp.center)
                         edge = Edge(mid, tmp, start, end1)
                         self.graph[mid].append(edge)
                         self.all_graph.add(edge)
                         return
+
                     else:
                         self.window_surface.fill(pygame.Color("black"))
                         return
@@ -290,6 +306,54 @@ class Graph_Simulator:
             tmp_edge = Edge(None, None, start, end)
             self.window_surface.blit(tmp_edge.surf, tmp_edge.rect)
             pygame.display.flip()
+
+    def __move_node(self, global_node):
+        for node in self.graph.keys():
+            for edge in self.graph[node]:
+                if node == global_node:
+                    flag = False
+                    for edge1 in self.graph[edge.destination]:
+                        if edge1.destination == node:
+                            flag = True
+                            break
+                    angle = 0 if not flag else -25
+                    start, end = self.__calc_position(edge.destination.center, node.center, angle)
+                    end1, end2 = self.__calc_position(node.center, edge.destination.center, -angle)
+                    edge.start_point = start
+                    edge.end_point = end1
+                    edge.surf.fill(BLACK_COLOR)
+                    edge.draw_arrow()
+                elif edge.destination == global_node:
+                    flag = False
+                    for edge1 in self.graph[global_node]:
+                        if edge1.destination == node:
+                            flag = True
+                            break
+                    angle = 0 if not flag else -25
+                    start, end = self.__calc_position(node.center, edge.destination.center, -angle)
+                    end1, end2 = self.__calc_position(edge.destination.center, node.center, angle)
+                    edge.start_point = end1
+                    edge.end_point = start
+                    edge.surf.fill(BLACK_COLOR)
+                    edge.draw_arrow()
+
+    def __delete_node(self):
+        nd = self.__is_in_node(pygame.mouse.get_pos())
+        if nd:
+            for v in self.graph[nd]:
+                self.all_graph.remove(v)
+            self.graph.pop(nd)
+            self.all_graph.remove(nd)
+            self.all_nodes.remove(nd)
+            for node, edges in self.graph.items():
+                new_lst: list[Edge] = []
+                for edge in edges:
+                    if edge.destination != nd:
+                        new_lst.append(edge)
+                    else:
+                        self.all_graph.remove(edge)
+                if len(new_lst) != len(self.graph[node]):
+                    self.graph[node] = new_lst
 
     def run(self):
         pygame.init()
@@ -308,24 +372,8 @@ class Graph_Simulator:
                     if key_pressed[pygame.K_LSHIFT]:
                         self.__add_edge(pygame.mouse.get_pos())
                         # self.all_graph.add(Edge(None, None, (1024, 900), pygame.mouse.get_pos()))
-                    elif key_pressed[pygame.K_BACKSPACE]:
-                        nd = self.__is_in_node(pygame.mouse.get_pos())
-                        if nd:
-                            for v in self.graph[nd]:
-                                self.all_graph.remove(v)
-                            self.graph.pop(nd)
-                            self.all_graph.remove(nd)
-                            self.all_nodes.remove(nd)
-                            for node,edges in self.graph.items():
-                                new_lst : list[Edge] = []
-                                for edge in edges:
-                                    if edge.destination != nd:
-                                        new_lst.append(edge)
-                                    else:
-                                        self.all_graph.remove(edge)
-                                if len(new_lst) != len(self.graph[node]):
-                                    self.graph[node] = new_lst
-
+                    elif key_pressed[pygame.K_BACKSPACE] or key_pressed[pygame.K_LCTRL]:
+                        self.__delete_node()
 
                     else:
                         mouse_pos = pygame.mouse.get_pos()
@@ -344,62 +392,7 @@ class Graph_Simulator:
                 elif event.type == pygame.MOUSEMOTION:
                     if drag:
                         global_node.move(event.pos)
-                        for node in self.graph.keys():
-                            for edge in self.graph[node]:
-                                if node == global_node:
-                                    flag = False
-                                    for edge1 in self.graph[edge.destination]:
-                                        if edge1.destination == node:
-                                            flag = True
-                                            break
-                                    angle = 0 if not flag else -25
-                                    start, end = self.__calc_position(edge.destination.center, node.center, angle)
-                                    end1, end2 = self.__calc_position(node.center, edge.destination.center, -angle)
-                                    edge.start_point = start
-                                    edge.end_point = end1
-                                    edge.surf.fill(BLACK_COLOR)
-                                    edge.draw_arrow()
-                                elif edge.destination == global_node:
-                                    flag = False
-                                    for edge1 in self.graph[global_node]:
-                                        if edge1.destination == node:
-                                            flag = True
-                                            break
-                                    angle = 0 if not flag else -25
-                                    start, end = self.__calc_position(node.center, edge.destination.center, -angle)
-                                    end1, end2 = self.__calc_position( edge.destination.center, node.center, angle)
-                                    edge.start_point = end1
-                                    edge.end_point = start
-                                    edge.surf.fill(BLACK_COLOR)
-                                    edge.draw_arrow()
-
-                        # for edge in self.graph[global_node]:
-                        #     print('here')
-                        #     for e in self.graph[edge.destination]:
-                        #         if e.destination == global_node:
-                        #
-                        #             start, end = self.__calc_position(edge.destination.center, global_node.center,45)
-                        #             end1, end2 = self.__calc_position(global_node.center, edge.destination.center,-45)
-                        #         else:
-                        #             start, end = self.__calc_position(edge.destination.center, global_node.center)
-                        #             end1, end2 = self.__calc_position(global_node.center, edge.destination.center)
-                        #
-                        #     edge.start_point = start
-                        #     edge.end_point = end1
-                        #     edge.surf.fill(BLACK_COLOR)
-                        #     edge.draw_arrow()
-                        # for node in self.graph:
-                        #     if node != global_node:
-                        #         for edge in self.graph[node]:
-                        #             if edge.destination == global_node:
-                        #                 start, end = self.__calc_position(global_node.center, node.center)
-                        #                 end1, end2 = self.__calc_position(node.center, global_node.center)
-                        #
-                        #                 edge.start_point = start
-                        #                 edge.end_point = end1
-                        #                 edge.surf.fill(BLACK_COLOR)
-                        #                 edge.draw_arrow()
-
+                        self.__move_node(global_node)
 
                 elif event.type == pygame.MOUSEBUTTONUP:
                     if drag:
@@ -407,27 +400,9 @@ class Graph_Simulator:
                         global_node.clicked_off()
                         global_node = None
 
-
-
-
-
-
-
             self.__stabling_graph()
             self.window_surface.fill(pygame.Color('Black'))
             for e in self.all_graph:
                 self.window_surface.blit(e.surf, e.rect)
-                # e.update2()
-            # for e in all_graph:
-            #     while True:
-            #         tmp_group = pygame.sprite.Group()
-            #         tmp_group.add(e)
-            #         collision = pygame.sprite.groupcollide(tmp_group,all_graph,False ,False)
-            #         for our , collided in collision:
-            #             collided.remove(our)
-            #
-            #
-            #         if pygame.sprite.spritecollideany(e, all_graph) != e:
-            #             while pygame.sprite.spritecollide()
             pygame.display.flip()
             self.clock.tick(60)
