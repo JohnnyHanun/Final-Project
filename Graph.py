@@ -22,12 +22,14 @@ class Node(pygame.sprite.Sprite):
     def __init__(self,
                  center: tuple[int, int],
                  all_nodes,  # OBJECT
-                 draw: bool = True
+                 draw: bool = True,
+                 name: str = ""
                  ):
         super(Node, self).__init__()
         self.center = center
         self.surf = pygame.Surface((2 * NODE_R, 2 * NODE_R))
-        self.text_view = pygame.font.SysFont("arial", 25, True, True).render("" if not draw else next(NODE_NAME), True,
+        self.name = "" if not draw else name if name else next(NODE_NAME)
+        self.text_view = pygame.font.SysFont("arial", 25, True, True).render("" if not draw else self.name, True,
                                                                              (255, 255, 255))
         self.is_clicked = False
         if draw:
