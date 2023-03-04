@@ -23,7 +23,6 @@ class Utils:
             directed = True if lst[0] == "Directed" else "Undirected"
             edges = lst[1:]
             edges = [i.split() for i in edges]
-            print(edges)
             weighted = True if len(edges[0]) == 3 else False
             nodes = set()
             for edge in edges:
@@ -31,18 +30,23 @@ class Utils:
                 nodes.add(edge[1])
             nodes = list(nodes)
             nodes.sort()
-            print(nodes)
             graph = {i: [] for i in nodes}
-            if directed:
-                for edge in edges:
-                    graph[edge[0]].append((edge[1], int(edge[2])))
-
-                print(graph)
-
+            if weighted:
+                if directed:
+                    for edge in edges:
+                        graph[edge[0]].append((edge[1], int(edge[2])))
+                else:
+                    for edge in edges:
+                        graph[edge[0]].append((edge[1], int(edge[2])))
+                        graph[edge[1]].append((edge[0], int(edge[2])))
             else:
-                for edge in edges:
-                    graph[edge[0]].append((edge[1], int(edge[2])))
-                    graph[edge[1]].append((edge[0], int(edge[2])))
-
+                if directed:
+                    for edge in edges:
+                        graph[edge[0]].append((edge[1],))
+                else:
+                    for edge in edges:
+                        graph[edge[0]].append((edge[1],))
+                        graph[edge[1]].append((edge[0],))
 
             print(graph)
+            return graph
