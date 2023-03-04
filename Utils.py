@@ -18,35 +18,35 @@ class Utils:
 
     def graph_parser(self, file_name):
         file = open(file_name, 'r')
-        if file:
-            lst = file.read().splitlines()
-            directed = True if lst[0] == "Directed" else "Undirected"
-            edges = lst[1:]
-            edges = [i.split() for i in edges]
-            weighted = True if len(edges[0]) == 3 else False
-            nodes = set()
-            for edge in edges:
-                nodes.add(edge[0])
-                nodes.add(edge[1])
-            nodes = list(nodes)
-            nodes.sort()
-            graph = {i: [] for i in nodes}
-            if weighted:
-                if directed:
-                    for edge in edges:
-                        graph[edge[0]].append((edge[1], int(edge[2])))
-                else:
-                    for edge in edges:
-                        graph[edge[0]].append((edge[1], int(edge[2])))
-                        graph[edge[1]].append((edge[0], int(edge[2])))
+        lst = file.read().splitlines()
+        file.close()
+        directed = True if lst[0].lower() == "directed" else False
+        edges = lst[1:]
+        edges = [i.split() for i in edges]
+        weighted = True if len(edges[0]) == 3 else False
+        nodes = set()
+        for edge in edges:
+            nodes.add(edge[0])
+            nodes.add(edge[1] if len(edge) > 1 else edge[0])
+        nodes = list(nodes)
+        nodes.sort()
+        graph = {i: [] for i in nodes}
+        if weighted:
+            if directed:
+                for edge in edges:
+                    graph[edge[0]].append((edge[1], int(edge[2])))
             else:
-                if directed:
-                    for edge in edges:
+                for edge in edges:
+                    graph[edge[0]].append((edge[1], int(edge[2])))
+                    graph[edge[1]].append((edge[0], int(edge[2])))
+        else:
+            if directed:
+                for edge in edges:
+                    if len(edge) > 1:
                         graph[edge[0]].append((edge[1],))
-                else:
-                    for edge in edges:
+            else:
+                for edge in edges:
+                    if len(edge) > 1:
                         graph[edge[0]].append((edge[1],))
                         graph[edge[1]].append((edge[0],))
-
-            print(graph)
-            return graph
+        return graph, directed, weighted
