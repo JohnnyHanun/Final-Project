@@ -341,7 +341,8 @@ class Graph_Simulator:
                         if edge1.destination == node:
                             flag = True
                             break
-                    angle = 0 if not flag else -25
+                    angle = 0 if (flag and not self.is_directed) or not flag else -25
+
                     start, end = self.__calc_position(edge.destination.center, node.center, angle)
                     end1, end2 = self.__calc_position(node.center, edge.destination.center, -angle)
                     edge.start_point = start
@@ -354,7 +355,7 @@ class Graph_Simulator:
                         if edge1.destination == node:
                             flag = True
                             break
-                    angle = 0 if not flag else -25
+                    angle = 0 if (flag and not self.is_directed) or not flag else -25
                     start, end = self.__calc_position(node.center, edge.destination.center, -angle)
                     end1, end2 = self.__calc_position(edge.destination.center, node.center, angle)
                     edge.start_point = end1
