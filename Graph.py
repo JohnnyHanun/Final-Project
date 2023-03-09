@@ -40,10 +40,7 @@ class Node(pygame.sprite.Sprite):
         self.surf.set_colorkey((0, 0, 0), RLEACCEL)
         self.rect = self.surf.get_rect(center=self.center)
         self.all_nodes = all_nodes
-        print(self.name, self.rect.center, (NODE_R // 2 + 15, NODE_R // 2 + 10))
-        re = self.text_view.get_rect()
-        re.center = (self.rect.center[0]/2, self.rect.center[1]/2)
-        self.surf.blit(self.text_view, (15, 15))
+        self.surf.blit(self.text_view, (20, 20))
 
     def clicked_on(self):
         self.surf.fill(pygame.Color('Black'))
@@ -51,14 +48,14 @@ class Node(pygame.sprite.Sprite):
         pygame.draw.circle(self.surf, 'Green', (NODE_R, NODE_R), NODE_R - 4)
         self.surf.set_colorkey((0, 0, 0), RLEACCEL)
         self.rect = self.surf.get_rect(center=self.center)
-        self.surf.blit(self.text_view, (NODE_R // 2 + 15, NODE_R // 2 + 10))
+        self.surf.blit(self.text_view, (20, 20))
         self.is_clicked = True
 
     def clicked_off(self):
         pygame.draw.circle(self.surf, 'Green', (NODE_R, NODE_R), NODE_R)
         self.surf.set_colorkey((0, 0, 0), RLEACCEL)
         self.rect = self.surf.get_rect(center=self.center)
-        self.surf.blit(self.text_view, (NODE_R // 2 + 15, NODE_R // 2 + 10))
+        self.surf.blit(self.text_view, (20, 20))
         self.is_clicked = False
 
     def move(self, mouse_pos: tuple[int, int]):
