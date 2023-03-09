@@ -32,7 +32,7 @@ class Node(pygame.sprite.Sprite):
         self.surf = pygame.Surface((2 * NODE_R, 2 * NODE_R))
         self.image = self.surf
         self.name = "" if not draw else name
-        self.text_view = pygame.font.SysFont("arial", 25, True, True).render("" if not draw else self.name, True,
+        self.text_view = pygame.font.SysFont("arial", 25, True, False).render("" if not draw else self.name, True,
                                                                              (255, 255, 255))
         self.is_clicked = False
         if draw:
@@ -40,12 +40,15 @@ class Node(pygame.sprite.Sprite):
         self.surf.set_colorkey((0, 0, 0), RLEACCEL)
         self.rect = self.surf.get_rect(center=self.center)
         self.all_nodes = all_nodes
-        self.surf.blit(self.text_view, (NODE_R // 2 + 15, NODE_R // 2 + 10))
+        print(self.name, self.rect.center, (NODE_R // 2 + 15, NODE_R // 2 + 10))
+        re = self.text_view.get_rect()
+        re.center = (self.rect.center[0]/2, self.rect.center[1]/2)
+        self.surf.blit(self.text_view, (15, 15))
 
     def clicked_on(self):
         self.surf.fill(pygame.Color('Black'))
         pygame.draw.circle(self.surf, 'Blue', (NODE_R, NODE_R), NODE_R)
-        pygame.draw.circle(self.surf, 'Green', (NODE_R, NODE_R), NODE_R -4)
+        pygame.draw.circle(self.surf, 'Green', (NODE_R, NODE_R), NODE_R - 4)
         self.surf.set_colorkey((0, 0, 0), RLEACCEL)
         self.rect = self.surf.get_rect(center=self.center)
         self.surf.blit(self.text_view, (NODE_R // 2 + 15, NODE_R // 2 + 10))
@@ -217,9 +220,6 @@ class Graph_Simulator:
                         edge = Edge(dst, src, end1, start, weight, self.is_directed, self.is_weighted)
                         self.graph[dst].append(edge)
 
-
-
-
         except FileNotFoundError:
             print("File not Found/Wrong format , Initalizing Empty Graph.")
 
@@ -264,14 +264,6 @@ class Graph_Simulator:
         tmp_node = Node(position, None, False)
         node = pygame.sprite.spritecollideany(tmp_node, self.all_nodes)
         return None if not node else node
-
-    def __is_in_edge(self, position: tuple[int, int]):
-        for lst in self.graph.values():
-            for e in lst:
-                print(e.destination.text_view)
-        # edge = pygame.sprite.spritecollideany(tmp_edge, self.all_nodes)
-        # print(edge)
-        # return None if not edge else edge
 
     def __calc_position(self, mouse_pos: tuple[int, int], center: tuple[int, int], angle_to_add: float = 0):
         theta = math.atan2(mouse_pos[1] - center[1], mouse_pos[0] - center[0]) + angle_to_add
@@ -422,6 +414,28 @@ class Graph_Simulator:
                     break
         src.clicked_off()
         dst.clicked_off()
+        return []
+
+    def __pressed_on_node(self, pressed_node, drag: bool, delete_edge_queue: list):
+        delete_edge_queue.append(pressed_node)
+        pressed_node.clicked_on()
+        d = drag
+        global_node = pressed_node
+        return global_node, d
+
+    def __add_node(self, mouse_pos):
+        node_name = next(NODE_NAME)
+        while self.easy_access_graph.get(node_name):
+            node_name = next(NODE_NAME)
+        node = Node(mouse_pos, self.all_nodes, name=node_name)
+        self.all_nodes.add(node)
+        self.all_graph.add(node)
+        self.graph[node] = []
+
+    def __clicked_off(self, delete_edge_queue):
+        for nd in delete_edge_queue:
+            nd.clicked_off()
+        return []
 
     def run(self):
         drag = False
@@ -434,24 +448,20 @@ class Graph_Simulator:
                     pygame.quit()
                     return
                 if event.type == pygame.MOUSEBUTTONDOWN and event.button == RIGHT_CLICK:
-                    for nd in delete_edge_queue:
-                        nd.clicked_off()
-                    delete_edge_queue = []
+                    delete_edge_queue = self.__clicked_off(delete_edge_queue)
                 if event.type == pygame.MOUSEBUTTONDOWN and event.button == LEFT_MOUSE:
                     key_pressed = pygame.key.get_pressed()
                     pressed_node = self.__is_in_node(pygame.mouse.get_pos())
                     if pressed_node:
-                        delete_edge_queue.append(pressed_node)
-                        pressed_node.clicked_on()
-                        drag = True
-                        global_node = pressed_node
+                        # delete_edge_queue.append(pressed_node)
+                        # pressed_node.clicked_on()
+                        # drag = True
+                        # global_node = pressed_node
+                        global_node, drag = self.__pressed_on_node(pressed_node, True, delete_edge_queue)
                         if len(delete_edge_queue) == 2:
-                            self.__delete_edge(delete_edge_queue)
-                            delete_edge_queue = []
+                            delete_edge_queue = self.__delete_edge(delete_edge_queue)
                     else:
-                        for nd in delete_edge_queue:
-                            nd.clicked_off()
-                        delete_edge_queue = []
+                        delete_edge_queue = self.__clicked_off(delete_edge_queue)
                         global_node = None
                         drag = False
                     if key_pressed[pygame.K_LSHIFT]:
@@ -466,13 +476,7 @@ class Graph_Simulator:
                         mouse_pos = pygame.mouse.get_pos()
                         nd: Node = self.__is_in_node(mouse_pos)
                         if not nd and not delete_edge_queue:
-                            node_name = next(NODE_NAME)
-                            while self.easy_access_graph.get(node_name):
-                                node_name = next(NODE_NAME)
-                            node = Node(mouse_pos, self.all_nodes, name=node_name)
-                            self.all_nodes.add(node)
-                            self.all_graph.add(node)
-                            self.graph[node] = []
+                            self.__add_node(mouse_pos)
                         else:
                             if not nd.is_clicked:
                                 drag = True
