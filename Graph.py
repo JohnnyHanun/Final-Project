@@ -100,11 +100,11 @@ class Edge(pygame.sprite.Sprite):
         self.surf.set_colorkey((0, 0, 0), RLEACCEL)
         self.rect = self.surf.get_rect(center=(SCREEN_SIZE[0] / 2, SCREEN_SIZE[1] / 2))
 
-    def draw(self):
+    def draw(self,double_edge=False):
         if self.is_directed:
-            self.__draw_arrow()
+            self.__draw_arrow(double_edge = double_edge)
         else:
-            self.__draw_line()
+            self.__draw_line(double_edge=double_edge)
 
     def __str__(self):
         return f'{self.source} -> {self.destination}'
@@ -121,7 +121,7 @@ class Edge(pygame.sprite.Sprite):
         return start, end
 
     def __draw_line(self,
-                    body_width: int = 4):
+                    body_width: int = 4, double_edge = False):
         # start, end = pygame.Vector2(self.start_point), pygame.Vector2(self.end_point)
         # middleX = (start.x + end.x) / 2
         # middleY = (start.y + end.y) / 2
@@ -130,12 +130,14 @@ class Edge(pygame.sprite.Sprite):
         # pygame.draw.rect(self.surf,self.color,rect)
         pygame.draw.line(self.surf, self.color, self.start_point, self.end_point, width=body_width)
         if self.is_weighted:
-            self.__draw_weight()
+            angle = 25 if double_edge else 0
+            self.__draw_weight(angle)
 
     def __draw_arrow(self,
                      body_width: int = 4,
                      head_width: int = 15,
-                     head_height: int = 15
+                     head_height: int = 15,
+                     double_edge = False
                      ):
         start, end, surface = pygame.Vector2(self.start_point), pygame.Vector2(self.end_point), self.surf
         arrow = start - end
@@ -173,6 +175,7 @@ class Edge(pygame.sprite.Sprite):
                 body_verts[i] += start
             pygame.draw.polygon(surface, self.color, body_verts)
             if self.is_weighted:
+                angle = -50 if double_edge else 0
                 self.__draw_weight(angle)
 
     def __draw_weight(self, angle=0):
@@ -183,13 +186,16 @@ class Edge(pygame.sprite.Sprite):
         middleX = (start.x + end.x) / 2
         middleY = (start.y + end.y) / 2
         text_rect = w.get_rect()
-        text_rect.center = (middleX, middleY - 25)
+        text_rect.center = (middleX, middleY + 25 + angle)
         # text_rect = pygame.transform.rotate(self.)
 
         if abs(start.x - end.x) <= 100:
-            text_rect.center = (middleX + 15, middleY)
+            text_rect.center = (middleX + 25 + angle, middleY)
 
         surface.blit(w, text_rect)
+
+    def set_weight(self, new_weight:int):
+        self.weight = new_weight
 
 
 class Graph_Simulator:
@@ -260,6 +266,72 @@ class Graph_Simulator:
                 return edge
         return False
 
+    def __edit_weight(self):
+        src: Node = None
+        dst: Node = None
+        sec = 1000
+        user_text = ""
+        while True:
+            self.clock.tick(60) / sec
+            if src and dst:
+                break
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                    exit()
+                if event.type == pygame.MOUSEBUTTONDOWN and event.button == RIGHT_CLICK:
+                    return
+                if event.type == pygame.MOUSEBUTTONDOWN and event.button == LEFT_MOUSE:
+                    node_pressed = self.__is_in_node(pygame.mouse.get_pos())
+                    if not src and node_pressed:
+                        src = node_pressed
+                        src.clicked_on()
+                    elif not dst and node_pressed and node_pressed != src:
+                        dst = node_pressed
+                        dst.clicked_on()
+                self.__refresh_screen()
+        flag = True
+        edge = self.__is_an_edge(self.graph[src], dst)
+        if not edge:
+            src.clicked_off()
+            dst.clicked_off()
+            return
+        while flag:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                    exit()
+                if event.type == pygame.KEYDOWN:
+                    # Check for backspace
+                    if event.key == pygame.K_BACKSPACE:
+                        # get text input from 0 to -1 i.e. end.
+                        user_text = user_text[:-1]
+                    # Unicode standard is used for string
+                    # formation
+                    if event.key == pygame.K_RETURN:
+                        flag = False
+                    else:
+                        user_text += event.unicode
+
+        try:
+            w = int(user_text) if user_text != "" else 1
+        except ValueError:
+            src.clicked_off()
+            dst.clicked_off()
+            return
+        if self.is_weighted:
+            if not self.is_directed:
+                edge2 = self.edge = self.__is_an_edge(self.graph[dst], src)
+                edge2.set_weight(w)
+                edge2.surf.fill(BLACK_COLOR)
+            edge.set_weight(w)
+            edge.surf.fill(BLACK_COLOR)
+            edge.draw()
+            src.clicked_off()
+            dst.clicked_off()
+            self.__refresh_screen()
+            return
+
     def __stabling_graph(self):
         return
         L0 = 250  # nominal distance in pixles
@@ -313,7 +385,7 @@ class Graph_Simulator:
         edge.start_point = start
         edge.end_point = end1
         edge.surf.fill(BLACK_COLOR)
-        edge.draw()
+        edge.draw(double_edge=True)
         start, end = self.__calc_position(src.center, dst.center, angle)
         end1, end2 = self.__calc_position(dst.center, src.center, -angle)
         newEdge = Edge(src, dst, end1, start, is_directed=self.is_directed, is_weighted=self.is_weighted, weight=weight)
@@ -386,7 +458,10 @@ class Graph_Simulator:
                     edge.start_point = start
                     edge.end_point = end1
                     edge.surf.fill(BLACK_COLOR)
-                    edge.draw()
+                    if self.is_directed:
+                        edge.draw(double_edge=flag)
+                    else:
+                        edge.draw()
                 elif edge.destination == global_node:
                     flag = False
                     for edge1 in self.graph[global_node]:
@@ -597,6 +672,8 @@ class Graph_Simulator:
                 key_pressed = pygame.key.get_pressed()
                 if event.type == pygame.KEYDOWN and key_pressed[pygame.K_b]:
                     self.__BFS()
+                if event.type == pygame.KEYDOWN and key_pressed[pygame.K_e]:
+                    self.__edit_weight()
                 if event.type == pygame.MOUSEBUTTONDOWN and event.button == RIGHT_CLICK:
                     delete_edge_queue = self.__clicked_off(delete_edge_queue)
                 if event.type == pygame.MOUSEBUTTONDOWN and event.button == LEFT_MOUSE:
@@ -616,6 +693,7 @@ class Graph_Simulator:
                     if key_pressed[pygame.K_LSHIFT]:
                         self.__add_edge(pygame.mouse.get_pos())
                         delete_edge_queue = []
+
                         # self.all_graph.add(Edge(None, None, (1024, 900), pygame.mouse.get_pos()))
                     elif key_pressed[pygame.K_BACKSPACE] or key_pressed[pygame.K_LCTRL]:
                         self.__delete_node()
