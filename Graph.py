@@ -1,9 +1,13 @@
 import math
 import random
+import os
+os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
 import time
 import pygame
 import pygame_gui
-
+from multiprocessing import Process,Queue
+import tkinter as tk
+from tkinter import simpledialog
 from Utils import Utils
 from pygame.locals import (
     RLEACCEL,
@@ -18,6 +22,13 @@ NODE_NAME = Utils.gen_letters()
 SCREEN_SIZE = (1024, 900)  # width ,height
 BLACK_COLOR = (0, 0, 0)
 WHITE_COLOR = (255, 255, 255)
+
+def edit_edge_while_add(queue):
+    ROOT = tk.Tk()
+    ROOT.withdraw()
+    USER_INP = simpledialog.askinteger(title="Edit Weight",
+                                      prompt="Please Enter Weight")
+    queue.put(USER_INP)
 
 
 class Node(pygame.sprite.Sprite):
@@ -416,7 +427,12 @@ class Graph_Simulator:
                             if edge.destination == mid:
                                 self.__two_way_edge(edge, mid, tmp, 25)
                                 return
-
+                        if self.is_weighted:
+                            q = Queue()
+                            p = Process(target=edit_edge_while_add, args=(q,))
+                            p.start()
+                            p.join()
+                            weight = q.get()
                         end1, end2 = self.__calc_position(mid.center, tmp.center)
                         edge = Edge(mid, tmp, start, end1, is_directed=self.is_directed, is_weighted=self.is_weighted,
                                     weight=weight)
@@ -584,7 +600,7 @@ class Graph_Simulator:
         src.paint_node(YELLOW)
         while queue:
             self.__refresh_screen()
-            pygame.time.wait(sec//2)
+            pygame.time.wait(sec // 2)
             curr = queue.pop(0)
             visited_nodes[curr] = True
             curr.paint_node(RED)
@@ -600,7 +616,7 @@ class Graph_Simulator:
                 if not visited_edges.get(edge):
                     queue.append(edge.destination)
                     if not visited_nodes.get(edge.destination):
-                        pygame.time.wait(sec//2)
+                        pygame.time.wait(sec // 2)
                         edge.destination.paint_node(YELLOW)
                         self.__refresh_screen()
                     if not edge.destination.algo_node:
