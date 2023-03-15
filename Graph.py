@@ -4,8 +4,7 @@ import os
 os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
 import time
 import pygame
-import pygame_gui
-from multiprocessing import Process,Queue
+from multiprocessing import Process, Queue
 import tkinter as tk
 from tkinter import simpledialog
 from Utils import Utils
@@ -319,7 +318,6 @@ class Graph_Simulator:
                     src.clicked_off()
                     dst.clicked_off()
                     return
-
                 if not self.is_directed:
                     edge2 = self.edge = self.__is_an_edge(self.graph[dst], src)
                     edge2.set_weight(weight)
@@ -686,10 +684,7 @@ class Graph_Simulator:
                 if event.type == pygame.MOUSEBUTTONDOWN and event.button == LEFT_MOUSE:
                     pressed_node = self.__is_in_node(pygame.mouse.get_pos())
                     if pressed_node:
-                        # delete_edge_queue.append(pressed_node)
-                        # pressed_node.clicked_on()
-                        # drag = True
-                        # global_node = pressed_node
+
                         global_node, drag = self.__pressed_on_node(pressed_node, True, delete_edge_queue)
                         if len(delete_edge_queue) == 2:
                             delete_edge_queue = self.__delete_edge(delete_edge_queue)
@@ -697,11 +692,14 @@ class Graph_Simulator:
                         delete_edge_queue = self.__clicked_off(delete_edge_queue)
                         global_node = None
                         drag = False
+
                     if key_pressed[pygame.K_LSHIFT]:
                         self.__add_edge(pygame.mouse.get_pos())
                         delete_edge_queue = []
+                        drag = False
+                        global_node.clicked_off()
+                        global_node = None
 
-                        # self.all_graph.add(Edge(None, None, (1024, 900), pygame.mouse.get_pos()))
                     elif key_pressed[pygame.K_BACKSPACE] or key_pressed[pygame.K_LCTRL]:
                         self.__delete_node()
                         delete_edge_queue = []
