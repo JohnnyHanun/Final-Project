@@ -281,7 +281,6 @@ class Graph_Simulator:
         src: Node = None
         dst: Node = None
         sec = 1000
-        user_text = ""
         while True:
             self.clock.tick(60) / sec
             if src and dst:
@@ -307,41 +306,31 @@ class Graph_Simulator:
             src.clicked_off()
             dst.clicked_off()
             return
+        weight = 0
         while flag:
-            for event in pygame.event.get():
-                if event.type == pygame.QUIT:
-                    pygame.quit()
-                    exit()
-                if event.type == pygame.KEYDOWN:
-                    # Check for backspace
-                    if event.key == pygame.K_BACKSPACE:
-                        # get text input from 0 to -1 i.e. end.
-                        user_text = user_text[:-1]
-                    # Unicode standard is used for string
-                    # formation
-                    if event.key == pygame.K_RETURN:
-                        flag = False
-                    else:
-                        user_text += event.unicode
 
-        try:
-            w = int(user_text) if user_text != "" else 1
-        except ValueError:
-            src.clicked_off()
-            dst.clicked_off()
-            return
-        if self.is_weighted:
-            if not self.is_directed:
-                edge2 = self.edge = self.__is_an_edge(self.graph[dst], src)
-                edge2.set_weight(w)
-                edge2.surf.fill(BLACK_COLOR)
-            edge.set_weight(w)
-            edge.surf.fill(BLACK_COLOR)
-            edge.draw()
-            src.clicked_off()
-            dst.clicked_off()
-            self.__refresh_screen()
-            return
+            if self.is_weighted:
+                q = Queue()
+                p = Process(target=edit_edge_while_add, args=(q,))
+                p.start()
+                p.join()
+                weight = q.get()
+                if weight is None:
+                    src.clicked_off()
+                    dst.clicked_off()
+                    return
+
+                if not self.is_directed:
+                    edge2 = self.edge = self.__is_an_edge(self.graph[dst], src)
+                    edge2.set_weight(weight)
+                    edge2.surf.fill(BLACK_COLOR)
+                edge.set_weight(weight)
+                edge.surf.fill(BLACK_COLOR)
+                edge.draw()
+                src.clicked_off()
+                dst.clicked_off()
+                self.__refresh_screen()
+                return
 
     def __stabling_graph(self):
         return
@@ -433,6 +422,8 @@ class Graph_Simulator:
                             p.start()
                             p.join()
                             weight = q.get()
+                            if weight is None:
+                                return
                         end1, end2 = self.__calc_position(mid.center, tmp.center)
                         edge = Edge(mid, tmp, start, end1, is_directed=self.is_directed, is_weighted=self.is_weighted,
                                     weight=weight)
