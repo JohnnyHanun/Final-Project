@@ -12,7 +12,8 @@ from Utils import Utils
 from pygame.locals import (
     RLEACCEL,
 )
-
+ROOT = tk.Tk()
+ROOT.withdraw()
 """CONSTANTS"""
 NODE_R: int = 30
 LEFT_MOUSE: int = 1
@@ -31,13 +32,11 @@ SPECIAL_BLUE = (0, 128, 255)
 
 
 def edit_edge_while_add(queue):
-    ROOT = tk.Tk()
-    ROOT.withdraw()
     USER_INP = simpledialog.askinteger(title="Edit Weight",
                                        prompt="Please Enter Weight then press Enter")
     # queue.put(USER_INP)
     queue.append(USER_INP)
-    ROOT.destroy()
+    # ROOT.destroy()
 
 
 class Node(pygame.sprite.Sprite):
@@ -393,6 +392,7 @@ class Graph_Simulator:
     def __is_in_node(self, position: tuple[int, int]):
         tmp_node = Node(position, None, False)
         node = pygame.sprite.spritecollideany(tmp_node, self.all_nodes)
+        tmp_node.kill()
         return None if not node else node
 
     def __calc_position(self, mouse_pos: tuple[int, int], center: tuple[int, int], angle_to_add: float = 0):
@@ -452,6 +452,7 @@ class Graph_Simulator:
                             weight = q.pop(0)
                             if weight is None:
                                 return
+
                         end1, end2 = self.__calc_position(mid.center, tmp.center)
                         edge = Edge(mid, tmp, start, end1, is_directed=self.is_directed, is_weighted=self.is_weighted,
                                     weight=weight)
