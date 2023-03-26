@@ -248,15 +248,16 @@ class Edge(pygame.sprite.Sprite):
         #
         # surface.blit(w, text_rect)
         start, end, surface = pygame.Vector2(self.start_point), pygame.Vector2(self.end_point), self.surf
-        w = pygame.font.SysFont("arial", 25, True, True).render("1" if self.weight == -1 else str(self.weight), True,
-                                                                (0, 255, 0))
+        str_weight = str(self.weight)
+        w = pygame.font.SysFont("arial", 22, True, True).render("1" if self.weight == -1 else str_weight, True,
+                                                                (127,255,212))
         angle = math.atan2(end.x - start.x, end.y - start.y)
         middleX = (start.x + end.x) / 2
         middleY = (start.y + end.y) / 2
         # hline_x1 = middleX - 25 * math.cos(angle)
         # hline_y1 = middleY + 25 * math.sin(angle)
-        hline_x2 = middleX + 25 * math.cos(angle)
-        hline_y2 = middleY - 25 * math.sin(angle)
+        hline_x2 = middleX + 35 * math.cos(angle)
+        hline_y2 = middleY - 35 * math.sin(angle)
         w_rect = w.get_rect()
         w_rect.center = (hline_x2, hline_y2)
         self.surf.blit(w,w_rect)
@@ -456,6 +457,7 @@ class Graph_Simulator:
 
     def __add_edge(self, position: tuple[int, int]):
         mid: Node = self.__is_in_node(position)
+        q = []
         if not mid:
             return
         start, end, weight = 0, 0, 0
@@ -476,7 +478,11 @@ class Graph_Simulator:
                         self.window_surface.fill(pygame.Color("black"))
                         for edge in self.graph[tmp]:
                             if edge == mid:
-                                self.__two_way_edge(self.graph[tmp][mid], mid, tmp, 25)
+                                edit_edge_while_add(q)
+                                weight = q.pop(0)
+                                if weight is None:
+                                    return
+                                self.__two_way_edge(self.graph[tmp][mid], mid, tmp, 25,weight=weight)
                                 mid.deg_out += 1
                                 tmp.deg_in += 1
                                 return
@@ -484,7 +490,6 @@ class Graph_Simulator:
                             # q = Queue()
                             # p = Process(target=edit_edge_while_add, args=(q,))
                             # p.run()
-                            q = []
                             edit_edge_while_add(q)
                             weight = q.pop(0)
                             if weight is None:
