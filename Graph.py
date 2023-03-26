@@ -14,8 +14,8 @@ from pygame.locals import (
     RLEACCEL,
 )
 
-# ROOT = tk.Tk()
-# ROOT.withdraw()
+ROOT = tk.Tk()
+ROOT.withdraw()
 # ROOT.
 """CONSTANTS"""
 NODE_R: int = 30
@@ -887,9 +887,10 @@ class Graph_Simulator:
     def __Kosaraju_Sharir(self):
         pygame.event.pump()
         sec = 1000
-        lst_to_shuffle = [(key, key.deg_in + key.deg_out) for key in self.graph.keys()]
-        random.shuffle(lst_to_shuffle)
-        random_node, _ = max(lst_to_shuffle, key=lambda x: x[1])
+        # lst_to_shuffle = [(key, key.deg_in + key.deg_out) for key in self.graph.keys()]
+        # random.shuffle(lst_to_shuffle)
+        # random_node, _ = max(lst_to_shuffle, key=lambda x: x[1])
+        random_node = random.choice(list(self.graph.keys()))
         self.__clean_data_for_algos()
         visited = {}
         stack: list[Node] = []
@@ -933,10 +934,18 @@ class Graph_Simulator:
             pygame.display.update()
             pygame.time.delay(3*sec)
             self.__avoiding_pygame_crush()
-
-        self.__clean_data_for_algos()
+        all_colors = [(0, 0, 0), (255, 255, 255), (0, 255, 0)]
+        counter = 0
+        while counter != len(strongly_connected_components):
+            color = tuple([random.randint(0, 255) for _ in range(3)])
+            if color not in all_colors:
+                all_colors.append(color)
+                for node in strongly_connected_components[counter]:
+                    node.paint_node(color)
+                counter += 1
+        self.__refresh_screen()
         pygame.time.delay(5 * sec)
-
+        self.__clean_data_for_algos()
     def __BFS(self):
         pygame.event.pump()
         queue = []
