@@ -54,6 +54,56 @@ if __name__ == '__main__':
     #print(s)
     #Graph_Simulator(r'C:\Users\yoyom\Desktop\gonen_graph3.txt').run()
     Graph_Simulator(r'C:\Users\yoyom\Desktop\gonen_graph2.txt').run()
+import pygame
+import math
+
+# Initialize Pygame
+pygame.init()
+
+# Set up the screen
+screen = pygame.display.set_mode((400, 400))
+pygame.display.set_caption("Cross from Line Example")
+
+# Define the color of the cross
+color = (255, 0, 0)
+
+# Define the endpoints of the given line
+x1, y1 = 100, 200
+x2, y2 = 300, 200
+
+# Find the midpoint of the given line
+midpoint = ((x1 + x2) // 2, (y1 + y2) // 2)
+
+# Find the angle of the given line in radians
+angle = math.atan2(y2 - y1, x2 - x1)
+
+# Calculate the endpoints of the vertical line of the cross
+vline_x1 = midpoint[0] - 50 * math.sin(angle)
+vline_y1 = midpoint[1] - 50 * math.cos(angle)
+vline_x2 = midpoint[0] + 50 * math.sin(angle)
+vline_y2 = midpoint[1] + 50 * math.cos(angle)
+
+# Calculate the endpoints of the horizontal line of the cross
+hline_x1 = midpoint[0] - 50 * math.cos(angle)
+hline_y1 = midpoint[1] + 50 * math.sin(angle)
+hline_x2 = midpoint[0] + 50 * math.cos(angle)
+hline_y2 = midpoint[1] - 50 * math.sin(angle)
+
+# Draw the vertical line of the cross
+pygame.draw.line(screen, color, (vline_x1, vline_y1), (vline_x2, vline_y2), 5)
+
+# Draw the horizontal line of the cross
+pygame.draw.line(screen, color, (hline_x1, hline_y1), (hline_x2, hline_y2), 5)
+
+# Update the screen
+pygame.display.flip()
+
+# Wait for the user to close the window
+while True:
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            pygame.quit()
+            quit()
 
 
 

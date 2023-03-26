@@ -229,24 +229,45 @@ class Edge(pygame.sprite.Sprite):
             self.__draw_weight()
 
     def __draw_weight(self, angle=0):
+        # start, end, surface = pygame.Vector2(self.start_point), pygame.Vector2(self.end_point), self.surf
+        #
+        # w = pygame.font.SysFont("arial", 25, True, True).render("1" if self.weight == -1 else str(self.weight), True,
+        #                                                         (0, 255, 0))
+        # middleX = (start.x + end.x) / 2
+        # middleY = (start.y + end.y) / 2
+        # text_rect = w.get_rect()
+        # calc_angle = math.degrees(math.atan2(end.y - start.y, end.x - start.x))
+        # # print(f'{self} {self.start_point} {self.end_point}')
+        # angle = 25 if calc_angle <= 0 else -25
+        # text_rect.center = (middleX, middleY + angle)
+        #
+        # # text_rect = pygame.transform.rotate(self.)
+        #
+        # if abs(start.x - end.x) <= 100:
+        #     text_rect.center = (middleX + angle, middleY)
+        #
+        # surface.blit(w, text_rect)
         start, end, surface = pygame.Vector2(self.start_point), pygame.Vector2(self.end_point), self.surf
-
         w = pygame.font.SysFont("arial", 25, True, True).render("1" if self.weight == -1 else str(self.weight), True,
                                                                 (0, 255, 0))
+        angle = math.atan2(end.x - start.x, end.y - start.y)
         middleX = (start.x + end.x) / 2
         middleY = (start.y + end.y) / 2
-        text_rect = w.get_rect()
-        calc_angle = math.degrees(math.atan2(end.y - start.y, end.x - start.x))
-        # print(f'{self} {self.start_point} {self.end_point}')
-        angle = 25 if calc_angle <= 0 else -25
-        text_rect.center = (middleX, middleY + angle)
+        # hline_x1 = middleX - 25 * math.cos(angle)
+        # hline_y1 = middleY + 25 * math.sin(angle)
+        hline_x2 = middleX + 25 * math.cos(angle)
+        hline_y2 = middleY - 25 * math.sin(angle)
+        w_rect = w.get_rect()
+        w_rect.center = (hline_x2, hline_y2)
+        self.surf.blit(w,w_rect)
+        #pygame.draw.line(self.surf, self.color, (hline_x1,hline_y1), (hline_x2, hline_y2), width=4)
 
-        # text_rect = pygame.transform.rotate(self.)
 
-        if abs(start.x - end.x) <= 100:
-            text_rect.center = (middleX + angle, middleY)
 
-        surface.blit(w, text_rect)
+
+
+
+
 
     def set_weight(self, new_weight: int):
         self.weight = new_weight
