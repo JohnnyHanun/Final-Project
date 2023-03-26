@@ -3,7 +3,7 @@ import random
 import os
 import heapq
 from typing import TypeVar, Union, Iterable
-
+from constants import *
 os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
 import time
 import pygame
@@ -18,20 +18,7 @@ ROOT = tk.Tk()
 ROOT.withdraw()
 # ROOT.
 """CONSTANTS"""
-NODE_R: int = 30
-LEFT_MOUSE: int = 1
-RIGHT_CLICK: int = 3
-Utils: Utils = Utils()
-NODE_NAME = Utils.gen_letters()
-SCREEN_SIZE = (1024, 900)  # width ,height
-BLACK_COLOR = (0, 0, 0)
-WHITE_COLOR = (255, 255, 255)
-YELLOW = (255, 255, 0)
-ORANGE = (220, 137, 12)
-RED = (255, 0, 0)
-TARGET = (204, 0, 102)
-BROWN = (153, 102, 0)
-SPECIAL_BLUE = (0, 128, 255)
+
 
 
 def edit_edge_while_add(queue):

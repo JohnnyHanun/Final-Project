@@ -2,24 +2,12 @@ import pygame
 import pygame_gui
 from tkinter import messagebox
 import tkinter
+from constants import *
 root = tkinter.Tk()
 root.withdraw()
 from pygame.locals import (
     RLEACCEL,
 )
-""" CONSTANTS """
-SCREEN_SIZE = (1024, 900)  # width ,height
-WHITE_COLOR = (255, 255, 255)
-BLACK_COLOR = (0, 0, 0)
-ELEMENT_COLOR1 = "#00A7A0"
-ELEMENT_COLOR2 = "#005BA7"
-GREY_COLOR = (128, 128, 128)
-TEXT_COLOR = "#0881ea"
-ELEMENT_POS = (355, 590, 290, 55)  # x , y , width , height
-TEXT_POS = (482.5, 590)
-NINE, TEN = 9, 10
-STARTING_POS = (355, 80, 290, 55)  # x , y , width , height
-STACK_COLOR = "#5ba700"  # 6ba257
 
 
 class StackElement:
