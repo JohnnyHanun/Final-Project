@@ -22,101 +22,59 @@ ABOUT = [f'pygame-menu {pygame_menu.__version__}',
 DIFFICULTY = ['EASY']
 FPS = 60
 WINDOW_SIZE = (1024, 900)
+is_weighted_graph = [True]
 
 clock: Optional['pygame.time.Clock'] = None
 main_menu: Optional['pygame_menu.Menu'] = None
 surface: Optional['pygame.Surface'] = None
 
 
-def change_difficulty(value: Tuple[Any, int], difficulty: str) -> None:
-    """
-    Change difficulty of the game.
-
-    :param value: Tuple containing the data of the selected object
-    :param difficulty: Optional parameter passed as argument to add_selector
-    """
-    selected, index = value
-    print(f'Selected difficulty: "{selected}" ({difficulty}) at index {index}')
-    DIFFICULTY[0] = difficulty
-
-
-def random_color() -> Tuple[int, int, int]:
-    """
-    Return a random color.
-
-    :return: Color tuple
-    """
-    return randrange(0, 255), randrange(0, 255), randrange(0, 255)
-
-
-def play_function(difficulty: List, font: 'pygame.font.Font', test: bool = False) -> None:
+def directed_graph_init(file_name: list, is_weighted_graph: list, font: 'pygame.font.Font', test: bool = False) -> None:
     """
     Main game function.
 
+    :param is_weighted_graph:
+    :param file_name:
     :param difficulty: Difficulty of the game
     :param font: Pygame font
     :param test: Test method, if ``True`` only one loop is allowed
     """
-    assert isinstance(difficulty, list)
-    difficulty = difficulty[0]
-    assert isinstance(difficulty, str)
 
     # Define globals
     global main_menu
     global clock
-
-    if difficulty == 'EASY':
-        f = font.render('Playing as a baby (easy)', True, (255, 255, 255))
-    elif difficulty == 'MEDIUM':
-        f = font.render('Playing as a kid (medium)', True, (255, 255, 255))
-    elif difficulty == 'HARD':
-        f = font.render('Playing as a champion (hard)', True, (255, 255, 255))
+    if len(file_name) == 0:
+        Graph_Simulator(menu=main_menu, is_weighted=is_weighted_graph[-1]).run()
     else:
-        raise ValueError(f'unknown difficulty {difficulty}')
-    f_esc = font.render('Press ESC to open the menu', True, (255, 255, 255))
+        Graph_Simulator(file_name=file_name[0], menu=main_menu).run()
 
-    # Draw random color and text
-    bg_color = random_color()
-
-    # Reset main menu and disable
-    # You also can set another menu, like a 'pause menu', or just use the same
-    # main_menu as the menu that will check all your input.
     main_menu.disable()
     main_menu.full_reset()
+    main_menu.enable()
 
-    frame = 0
 
-    while True:
+def undirected_graph_init(file_name: list,is_weighted_graph: list, font: 'pygame.font.Font', test: bool = False) -> None:
+    """
+    Main game function.
 
-        # noinspection PyUnresolvedReferences
-        clock.tick(60)
-        frame += 1
+    :param is_weighted_graph:
+    :param file_name:
+    :param difficulty: Difficulty of the game
+    :param font: Pygame font
+    :param test: Test method, if ``True`` only one loop is allowed
+    """
 
-        # Application events
-        events = pygame.event.get()
-        for e in events:
-            if e.type == pygame.QUIT:
-                exit()
-            elif e.type == pygame.KEYDOWN:
-                if e.key == pygame.K_ESCAPE:
-                    main_menu.enable()
+    # Define globals
+    global main_menu
+    global clock
+    if len(file_name) == 0:
+        Graph_Simulator(menu=main_menu, is_directed=False, is_weighted=is_weighted_graph[-1]).run()
+    else:
+        Graph_Simulator(file_name=file_name[1], menu=main_menu, is_directed=False).run()
 
-                    # Quit this function, then skip to loop of main-menu on line 221
-                    return
-
-        # Pass events to main_menu
-        if main_menu.is_enabled():
-            main_menu.update(events)
-
-        # Continue playing
-        surface.fill(bg_color)
-        surface.blit(f, (int((WINDOW_SIZE[0] - f.get_width()) / 2), int(WINDOW_SIZE[1] / 2 - f.get_height())))
-        surface.blit(f_esc, (int((WINDOW_SIZE[0] - f_esc.get_width()) / 2), int(WINDOW_SIZE[1] / 2 + f_esc.get_height())))
-        pygame.display.flip()
-
-        # If test returns
-        if test and frame == 2:
-            break
+    main_menu.disable()
+    main_menu.full_reset()
+    main_menu.enable()
 
 
 def main_background() -> None:
@@ -125,6 +83,11 @@ def main_background() -> None:
     """
     global surface
     surface.fill((128, 0, 128))
+
+
+def weighted_graph(value):
+
+    is_weighted_graph[0] = value
 
 
 def main(test: bool = False) -> None:
@@ -152,8 +115,8 @@ def main(test: bool = False) -> None:
     # -------------------------------------------------------------------------
     play_menu = pygame_menu.Menu(
         height=WINDOW_SIZE[1] * 0.7,
-        title='Play Menu',
-        width=WINDOW_SIZE[0] * 0.75
+        title='Graph Menu',
+        width=WINDOW_SIZE[0] * 0.85
     )
 
     submenu_theme = pygame_menu.themes.THEME_DEFAULT.copy()
@@ -167,18 +130,24 @@ def main(test: bool = False) -> None:
     for i in range(30):
         play_submenu.add.button(f'Back {i}', pygame_menu.events.BACK)
     play_submenu.add.button('Return to main menu', pygame_menu.events.RESET)
+    file_name = [r'/Users/gonenselner/Desktop/gonen_graph.txt', r'/Users/gonenselner/Desktop/gonen_graph 2.txt']
 
-    play_menu.add.button('Start',  # When pressing return -> play(DIFFICULTY[0], font)
-                         play_function,
-                         DIFFICULTY,
+    def get_input(value):
+        file_name.insert(0, value)
+
+    play_menu.add.text_input('File Path: ', input_type=pygame_menu.locals.INPUT_TEXT,
+                             default='', input_underline='_',
+                             onchange=get_input)
+    play_menu.add.toggle_switch('Weighted Graph', True, toggleswitch_id='first_switch', onchange=weighted_graph)
+    global is_weighted_graph
+    play_menu.add.button('Directed Graph',  # When pressing return -> play(DIFFICULTY[0], font)
+                         directed_graph_init,
+                         file_name, is_weighted_graph,
                          pygame.font.Font(pygame_menu.font.FONT_FRANCHISE, 30))
-    play_menu.add.selector('Select difficulty ',
-                           [('1 - Easy', 'EASY'),
-                            ('2 - Medium', 'MEDIUM'),
-                            ('3 - Hard', 'HARD')],
-                           onchange=change_difficulty,
-                           selector_id='select_difficulty')
-    play_menu.add.button('Another menu', play_submenu)
+    play_menu.add.button('Undirected Graph',  # When pressing return -> play(DIFFICULTY[0], font)
+                         undirected_graph_init,
+                         file_name,  is_weighted_graph,
+                         pygame.font.Font(pygame_menu.font.FONT_FRANCHISE, 30))
     play_menu.add.button('Return to main menu', pygame_menu.events.BACK)
 
     # -------------------------------------------------------------------------
@@ -211,7 +180,7 @@ def main(test: bool = False) -> None:
         width=WINDOW_SIZE[0] * 0.6
     )
 
-    main_menu.add.button('Play', play_menu)
+    main_menu.add.button('Graph', play_menu)
     main_menu.add.button('About', about_menu)
     main_menu.add.button('Quit', pygame_menu.events.EXIT)
 

@@ -5,7 +5,6 @@ NODE_R: int = 30
 LEFT_MOUSE: int = 1
 RIGHT_CLICK: int = 3
 Utils: Utils = Utils()
-NODE_NAME = Utils.gen_letters()
 SCREEN_SIZE = (1024, 900)  # width ,height
 BLACK_COLOR = (0, 0, 0)
 WHITE_COLOR = (255, 255, 255)

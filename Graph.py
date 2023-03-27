@@ -257,7 +257,7 @@ class Edge(pygame.sprite.Sprite):
 
 
 class Graph_Simulator:
-    def __init__(self, file_name: str = ""):
+    def __init__(self, file_name: str = "", menu=None, is_directed=True, is_weighted=True):
         pygame.init()
         pygame.display.set_caption('Graph Visualizer')
         self.graph: dict[Node, dict[Node, Edge]] = {}
@@ -267,10 +267,12 @@ class Graph_Simulator:
         self.all_graph = pygame.sprite.Group()
         self.all_edges = pygame.sprite.Group()
         self.clock = pygame.time.Clock()
-        self.is_directed = True
-        self.is_weighted = True
-        self.ROOT = tk.Tk()
-        self.ROOT.withdraw()
+        self.is_directed = is_directed
+        self.is_weighted = is_weighted
+        self.__NODE_NAME = Utils.gen_letters()
+        # self.ROOT = tk.Tk()
+        # self.ROOT.withdraw()
+        self.menu = menu
         if file_name:
             self.__create_graph_from_file(file_name)
 
@@ -298,6 +300,7 @@ class Graph_Simulator:
                         dst_name = eg[0]
                     src, dst = self.easy_access_graph[nd], self.easy_access_graph[dst_name]
                     flag = False
+
                     if self.is_directed:
                         edge = self.__is_an_edge(self.graph[dst], src)
                         if edge:
@@ -621,9 +624,9 @@ class Graph_Simulator:
         return global_node, d
 
     def __add_node(self, mouse_pos):
-        node_name = next(NODE_NAME)
+        node_name = next(self.__NODE_NAME)
         while self.easy_access_graph.get(node_name):
-            node_name = next(NODE_NAME)
+            node_name = next(self.__NODE_NAME)
         node = Node(mouse_pos, self.all_nodes, name=node_name)
         self.all_nodes.add(node)
         self.all_graph.add(node)
@@ -1022,6 +1025,11 @@ class Graph_Simulator:
                 if event.type == pygame.QUIT:
                     pygame.quit()
                     return
+                elif event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_ESCAPE:
+                        self.menu.enable()
+
+                        return
                 key_pressed = pygame.key.get_pressed()
 
                 if event.type == pygame.KEYDOWN and key_pressed[pygame.K_b]:
