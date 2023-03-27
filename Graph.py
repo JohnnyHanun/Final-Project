@@ -103,7 +103,8 @@ class Edge(pygame.sprite.Sprite):
                  weight: int = 0,
                  is_directed: bool = True,
                  is_weighted: bool = True,
-                 edge_color: tuple[int, int, int] = WHITE_COLOR
+                 edge_color: tuple[int, int, int] = WHITE_COLOR,
+                 drawble: bool = True
                  ):
         super(Edge, self).__init__()
         self.activate_comparison = False
@@ -117,15 +118,17 @@ class Edge(pygame.sprite.Sprite):
         self.is_weighted = is_weighted
         self.surf = pygame.Surface(SCREEN_SIZE)
         self.image = self.surf
+        self.drawble = drawble
         self.draw()
         self.surf.set_colorkey((0, 0, 0), RLEACCEL)
         self.rect = self.surf.get_rect(center=(SCREEN_SIZE[0] / 2, SCREEN_SIZE[1] / 2))
 
     def draw(self):
-        if self.is_directed:
-            self.__draw_arrow()
-        else:
-            self.__draw_line()
+        if self.drawble:
+            if self.is_directed:
+                self.__draw_arrow()
+            else:
+                self.__draw_line()
 
     def __str__(self):
         return f'{self.source} -> {self.destination}'
@@ -216,24 +219,39 @@ class Edge(pygame.sprite.Sprite):
             self.__draw_weight()
 
     def __draw_weight(self, angle=0):
+        # start, end, surface = pygame.Vector2(self.start_point), pygame.Vector2(self.end_point), self.surf
+        #
+        # w = pygame.font.SysFont("arial", 25, True, True).render("1" if self.weight == -1 else str(self.weight), True,
+        #                                                         (0, 255, 0))
+        # middleX = (start.x + end.x) / 2
+        # middleY = (start.y + end.y) / 2
+        # text_rect = w.get_rect()
+        # calc_angle = math.degrees(math.atan2(end.y - start.y, end.x - start.x))
+        # # print(f'{self} {self.start_point} {self.end_point}')
+        # angle = 25 if calc_angle <= 0 else -25
+        # text_rect.center = (middleX, middleY + angle)
+        #
+        # # text_rect = pygame.transform.rotate(self.)
+        #
+        # if abs(start.x - end.x) <= 100:
+        #     text_rect.center = (middleX + angle, middleY)
+        #
+        # surface.blit(w, text_rect)
         start, end, surface = pygame.Vector2(self.start_point), pygame.Vector2(self.end_point), self.surf
-
-        w = pygame.font.SysFont("arial", 25, True, True).render("1" if self.weight == -1 else str(self.weight), True,
-                                                                (0, 255, 0))
+        str_weight = str(self.weight)
+        w = pygame.font.SysFont("arial", 22, True, True).render("1" if self.weight == -1 else str_weight, True,
+                                                                (127,255,212))
+        angle = math.atan2(end.x - start.x, end.y - start.y)
         middleX = (start.x + end.x) / 2
         middleY = (start.y + end.y) / 2
-        text_rect = w.get_rect()
-        calc_angle = math.degrees(math.atan2(end.y - start.y, end.x - start.x))
-        # print(f'{self} {self.start_point} {self.end_point}')
-        angle = 25 if calc_angle <= 0 else -25
-        text_rect.center = (middleX, middleY + angle)
-
-        # text_rect = pygame.transform.rotate(self.)
-
-        if abs(start.x - end.x) <= 100:
-            text_rect.center = (middleX + angle, middleY)
-
-        surface.blit(w, text_rect)
+        # hline_x1 = middleX - 25 * math.cos(angle)
+        # hline_y1 = middleY + 25 * math.sin(angle)
+        hline_x2 = middleX + 35 * math.cos(angle)
+        hline_y2 = middleY - 35 * math.sin(angle)
+        w_rect = w.get_rect()
+        w_rect.center = (hline_x2, hline_y2)
+        self.surf.blit(w,w_rect)
+        #pygame.draw.line(self.surf, self.color, (hline_x1,hline_y1), (hline_x2, hline_y2), width=4)
 
     def set_weight(self, new_weight: int):
         self.weight = new_weight
@@ -292,7 +310,10 @@ class Graph_Simulator:
                         continue
                     start, end = self.__calc_position(dst.center, src.center)
                     end1, start1 = self.__calc_position(src.center, dst.center)
-                    edge = Edge(src, dst, start, end1, weight, self.is_directed, self.is_weighted)
+                    draw_edge = True if not self.is_directed and not self.__is_an_edge(self.graph[dst], src) else False
+                    if self.is_directed:
+                        draw_edge = True
+                    edge = Edge(src, dst, start, end1, weight, self.is_directed, self.is_weighted, drawble=draw_edge)
                     self.all_graph.add(edge)
                     self.graph[src][dst] = edge
                     src.deg_out += 1
@@ -422,6 +443,7 @@ class Graph_Simulator:
 
     def __add_edge(self, position: tuple[int, int]):
         mid: Node = self.__is_in_node(position)
+        q = []
         if not mid:
             return
         start, end, weight = 0, 0, 0
@@ -442,7 +464,11 @@ class Graph_Simulator:
                         self.window_surface.fill(pygame.Color("black"))
                         for edge in self.graph[tmp]:
                             if edge == mid:
-                                self.__two_way_edge(self.graph[tmp][mid], mid, tmp, 25)
+                                edit_edge_while_add(q)
+                                weight = q.pop(0)
+                                if weight is None:
+                                    return
+                                self.__two_way_edge(self.graph[tmp][mid], mid, tmp, 25,weight=weight)
                                 mid.deg_out += 1
                                 tmp.deg_in += 1
                                 return
@@ -450,7 +476,6 @@ class Graph_Simulator:
                             # q = Queue()
                             # p = Process(target=edit_edge_while_add, args=(q,))
                             # p.run()
-                            q = []
                             edit_edge_while_add(q)
                             weight = q.pop(0)
                             if weight is None:
@@ -464,7 +489,7 @@ class Graph_Simulator:
                         tmp.deg_in += 1
                         if not self.is_directed:
                             edge = Edge(tmp, mid, end1, start, is_directed=self.is_directed,
-                                        is_weighted=self.is_weighted, weight=weight)
+                                        is_weighted=self.is_weighted, weight=weight, drawble=False)
                             self.graph[tmp][mid] = edge
                             self.all_graph.add(edge)
                             tmp.deg_out += 1
