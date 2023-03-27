@@ -1,4 +1,4 @@
-import Utils
+from Utils import Utils
 
 """ GRAPH CONSTANTS """
 NODE_R: int = 30

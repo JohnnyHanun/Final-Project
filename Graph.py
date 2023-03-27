@@ -9,7 +9,6 @@ import time
 import pygame
 import tkinter as tk
 from tkinter import simpledialog
-from Utils import Utils
 from pygame.locals import (
     RLEACCEL,
 )
