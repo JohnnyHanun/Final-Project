@@ -16,9 +16,6 @@ from pygame.locals import (
 ROOT = tk.Tk()
 ROOT.withdraw()
 # ROOT.
-"""CONSTANTS"""
-
-
 
 def edit_edge_while_add(queue):
     USER_INP = simpledialog.askinteger(title="Edit Weight",
