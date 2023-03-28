@@ -8,16 +8,17 @@ os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
 import time
 import pygame
 import tkinter as tk
+
 from tkinter import simpledialog
 from pygame.locals import (
     RLEACCEL,
 )
 
 ROOT = tk.Tk()
+ROOT.overrideredirect(1)
 ROOT.withdraw()
-# ROOT.
-"""CONSTANTS"""
 
+# ROOT.
 
 
 def edit_edge_while_add(queue):
@@ -270,8 +271,6 @@ class Graph_Simulator:
         self.is_directed = is_directed
         self.is_weighted = is_weighted
         self.__NODE_NAME = Utils.gen_letters()
-        # self.ROOT = tk.Tk()
-        # self.ROOT.withdraw()
         self.menu = menu
         if file_name:
             self.__create_graph_from_file(file_name)
@@ -1028,7 +1027,6 @@ class Graph_Simulator:
                 elif event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_ESCAPE:
                         self.menu.enable()
-
                         return
                 key_pressed = pygame.key.get_pressed()
 
