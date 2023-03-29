@@ -39,8 +39,8 @@ def file_name_init(is_weighted_graph: list, font: 'pygame.font.Font') -> None:
     global main_menu
     manager = pygame_gui.UIManager((SCREEN_SIZE[0], SCREEN_SIZE[1]))
 
-    file_dialog = pygame_gui.windows.ui_file_dialog.UIFileDialog(rect=pygame.Rect((0, 0), (SCREEN_SIZE[1]//2,
-                                                                                           SCREEN_SIZE[0] //2)),
+    file_dialog = pygame_gui.windows.ui_file_dialog.UIFileDialog(rect=pygame.Rect((SCREEN_SIZE[0]//2-250, SCREEN_SIZE[1]//2-250), (500,
+                                                                                           500)),
                                                                  manager=manager, initial_file_path=desktop)
     while True:
         time_delta = clock.tick(FPS) / 1000.0
