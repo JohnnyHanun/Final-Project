@@ -3,17 +3,24 @@ __all__ = ['main']
 
 import pygame
 import pygame_menu
+import pygame_gui
 from pygame_menu.examples import create_example_window
 from Graph import Graph_Simulator
 from typing import Tuple, Any, Optional, List
 from StackVisualizer import StackVisualizer
 from constants import *
-
+import subprocess
+import sys
+import os
+if sys.platform == "win32":
+    command = r'reg query "HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\User Shell Folders" /v "Desktop"'
+    result = subprocess.run(command, stdout=subprocess.PIPE, text = True)
+    desktop = result.stdout.splitlines()[2].split()[2]
+else:
+    desktop = os.path.expanduser("~/Desktop")
 # Constants and global variables
 FPS = 60
 is_weighted_graph = [True]
-file_name = [r'/Users/gonenselner/Desktop/gonen_graph.txt', r'/Users/gonenselner/Desktop/gonen_graph 2.txt']
-# file_name = [r'C:\Users\yoyom\Desktop\gonen_graph.txt', r'C:\Users\yoyom\Desktop\gonen_graph2.txt']
 clock: Optional['pygame.time.Clock'] = None
 main_menu: Optional['pygame_menu.Menu'] = None
 surface: Optional['pygame.Surface'] = None
@@ -27,27 +34,59 @@ def weighted_graph(value):
     is_weighted_graph[0] = value
 
 
-def directed_graph_init(file_name: list, is_weighted_graph: list, font: 'pygame.font.Font') -> None:
+def file_name_init(is_weighted_graph: list, font: 'pygame.font.Font') -> None:
     # Define globals
     global main_menu
-    if len(file_name) == 0:
-        Graph_Simulator(menu=main_menu, is_weighted=is_weighted_graph[-1]).run()
-    else:
-        Graph_Simulator(file_name=file_name[0], menu=main_menu).run()
+    manager = pygame_gui.UIManager((SCREEN_SIZE[0], SCREEN_SIZE[1]))
 
+    file_dialog = pygame_gui.windows.ui_file_dialog.UIFileDialog(rect=pygame.Rect((0, 0), (SCREEN_SIZE[1]//2,
+                                                                                           SCREEN_SIZE[0] //2)),
+                                                                 manager=manager, initial_file_path=desktop)
+    while True:
+        time_delta = clock.tick(FPS) / 1000.0
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                exit()
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_ESCAPE:
+                    main_menu.enable()
+                    return
+            if event.type == pygame_gui.UI_FILE_DIALOG_PATH_PICKED:
+                if event.ui_element == file_dialog:
+                    print("Path picked:", event.text)
+                    Graph_Simulator(file_name=event.text, menu=main_menu).run()
+                    main_menu.disable()
+                    main_menu.full_reset()
+                    main_menu.enable()
+                    return
+
+            if event.type == pygame_gui.UI_WINDOW_CLOSE:
+                if event.ui_element == file_dialog:
+                    print("Window closed")
+                    main_menu.disable()
+                    main_menu.full_reset()
+                    main_menu.enable()
+                    return
+            manager.process_events(event)
+        manager.update(time_delta)
+        surface.fill((128, 0, 128))
+        manager.draw_ui(surface)
+        pygame.display.update()
+
+
+def directed_graph_init(is_weighted_graph: list, font: 'pygame.font.Font') -> None:
+    # Define globals
+    global main_menu
+    Graph_Simulator(menu=main_menu,is_directed=True, is_weighted=is_weighted_graph[-1]).run()
     main_menu.disable()
     main_menu.full_reset()
     main_menu.enable()
 
 
-def undirected_graph_init(file_name: list, is_weighted_graph: list, font: 'pygame.font.Font',) -> None:
+def undirected_graph_init(is_weighted_graph: list, font: 'pygame.font.Font',) -> None:
     # Define globals
     global main_menu
-    if len(file_name) == 0:
-        Graph_Simulator(menu=main_menu, is_directed=False, is_weighted=is_weighted_graph[-1]).run()
-    else:
-        Graph_Simulator(file_name=file_name[1], menu=main_menu, is_directed=False).run()
-
+    Graph_Simulator(menu=main_menu, is_directed=False, is_weighted=is_weighted_graph[-1]).run()
     main_menu.disable()
     main_menu.full_reset()
     main_menu.enable()
@@ -100,17 +139,18 @@ def main(test: bool = False) -> None:
         width=SCREEN_SIZE[0] * 0.85
     )
 
-    graph_menu.add.text_input('File Path: ', input_type=pygame_menu.locals.INPUT_TEXT,
-                              default='', input_underline='_',
-                              onchange=get_input)
+    # graph_menu.add.text_input('File Path: ', input_type=pygame_menu.locals.INPUT_TEXT,
+    #                           default='', input_underline='_',
+    #                           onchange=get_input)
+    graph_menu.add.button('Import graph from file', file_name_init,is_weighted_graph,
+                          pygame.font.Font(pygame_menu.font.FONT_FRANCHISE, 30))
 
     graph_menu.add.toggle_switch('Weighted Graph', True, toggleswitch_id='first_switch', onchange=weighted_graph)
 
-    graph_menu.add.button('Directed Graph',directed_graph_init,file_name, is_weighted_graph,
+    graph_menu.add.button('Directed Graph', directed_graph_init, is_weighted_graph,
                           pygame.font.Font(pygame_menu.font.FONT_FRANCHISE, 30))
 
-    graph_menu.add.button('Undirected Graph', undirected_graph_init,
-                          file_name, is_weighted_graph,
+    graph_menu.add.button('Undirected Graph', undirected_graph_init, is_weighted_graph,
                           pygame.font.Font(pygame_menu.font.FONT_FRANCHISE, 30))
 
     graph_menu.add.button('Return to main menu', pygame_menu.events.BACK)
