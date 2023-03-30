@@ -6,24 +6,26 @@ import pygame_menu
 import pygame_gui
 from pygame_menu.examples import create_example_window
 from Graph import Graph_Simulator
-from typing import Tuple, Any, Optional, List
+from typing import Optional
 from StackVisualizer import StackVisualizer
 from constants import *
 import subprocess
 import sys
 import os
-if sys.platform == "win32":
-    command = r'reg query "HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\User Shell Folders" /v "Desktop"'
-    result = subprocess.run(command, stdout=subprocess.PIPE, text = True)
-    desktop = result.stdout.splitlines()[2].split()[2]
-else:
-    desktop = os.path.expanduser("~/Desktop")
+
 # Constants and global variables
 FPS = 60
 is_weighted_graph = [True]
 clock: Optional['pygame.time.Clock'] = None
 main_menu: Optional['pygame_menu.Menu'] = None
 surface: Optional['pygame.Surface'] = None
+if sys.platform == "win32":
+    command = r'reg query "HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\User Shell Folders" ' \
+              r'/v "Desktop" '
+    result = subprocess.run(command, stdout=subprocess.PIPE, text = True)
+    desktop = result.stdout.splitlines()[2].split()[2]
+else:
+    desktop = os.path.expanduser("~/Desktop")
 
 
 def get_input(value):
@@ -38,10 +40,9 @@ def file_name_init(is_weighted_graph: list, font: 'pygame.font.Font') -> None:
     # Define globals
     global main_menu
     manager = pygame_gui.UIManager((SCREEN_SIZE[0], SCREEN_SIZE[1]))
-
-    file_dialog = pygame_gui.windows.ui_file_dialog.UIFileDialog(rect=pygame.Rect((SCREEN_SIZE[0]//2-250, SCREEN_SIZE[1]//2-250), (500,
-                                                                                           500)),
-                                                                 manager=manager, initial_file_path=desktop)
+    rect = pygame.Rect(((SCREEN_SIZE[0] - (SCREEN_SIZE[0] * 0.6)) // 2, (SCREEN_SIZE[1] - (SCREEN_SIZE[1] * 0.6))//2),
+                       (SCREEN_SIZE[0] * 0.6, SCREEN_SIZE[1] * 0.6))
+    file_dialog = pygame_gui.windows.ui_file_dialog.UIFileDialog(rect=rect, manager=manager, initial_file_path=desktop)
     while True:
         time_delta = clock.tick(FPS) / 1000.0
         for event in pygame.event.get():
@@ -53,7 +54,6 @@ def file_name_init(is_weighted_graph: list, font: 'pygame.font.Font') -> None:
                     return
             if event.type == pygame_gui.UI_FILE_DIALOG_PATH_PICKED:
                 if event.ui_element == file_dialog:
-                    print("Path picked:", event.text)
                     Graph_Simulator(file_name=event.text, menu=main_menu).run()
                     main_menu.disable()
                     main_menu.full_reset()
@@ -62,7 +62,6 @@ def file_name_init(is_weighted_graph: list, font: 'pygame.font.Font') -> None:
 
             if event.type == pygame_gui.UI_WINDOW_CLOSE:
                 if event.ui_element == file_dialog:
-                    print("Window closed")
                     main_menu.disable()
                     main_menu.full_reset()
                     main_menu.enable()
@@ -134,14 +133,11 @@ def main(test: bool = False) -> None:
     # Create menus: Graph Menu
     # -------------------------------------------------------------------------
     graph_menu = pygame_menu.Menu(
-        height=SCREEN_SIZE[1] * 0.7,
+        height=SCREEN_SIZE[1] * 0.6,
         title='Graph Menu',
-        width=SCREEN_SIZE[0] * 0.85
+        width=SCREEN_SIZE[0] * 0.6
     )
 
-    # graph_menu.add.text_input('File Path: ', input_type=pygame_menu.locals.INPUT_TEXT,
-    #                           default='', input_underline='_',
-    #                           onchange=get_input)
     graph_menu.add.button('Import graph from file', file_name_init,is_weighted_graph,
                           pygame.font.Font(pygame_menu.font.FONT_FRANCHISE, 30))
 
