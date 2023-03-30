@@ -383,35 +383,45 @@ class Graph_Simulator:
                 return
 
     def __stabling_graph(self):
-        return
-        L0 = 250  # nominal distance in pixles
-        K1, K2 = 10, 1  # force/distance
-        V = 3  # pixel/frem
+        # L0 = 250  # nominal distance in pixles
+        K1, K2 = 1e-10, 1e-11  # force/distance
+        V = 6  # pixel/frem
         TOL = 5
+        x, y = SCREEN_SIZE
+        sp: Node = Node((x // 2, y // 2), all_nodes=None, draw=False)
+        dic = {}
+        sum_sqr_f = 0
         for v in self.all_nodes:
             fx, fy = 0, 0
             for u in self.all_nodes:
                 if v == u:
-                    continue
-                dx = u.center[0] - v.center[0]
-                dy = u.center[1] - v.center[1]
+                    L0 = 1e-1000
+                    dx = sp.center[0] - v.center[0]
+                    dy = sp.center[1] - v.center[1]
+                else:
+                    L0 = 250
+                    dx = u.center[0] - v.center[0]
+                    dy = u.center[1] - v.center[1]
                 dist = math.sqrt((dx ** 2) + (dy ** 2)) + 1e-10
-                my_k = K1 if self.__is_an_edge(self.graph[u], v) else K2
-                if dist > L0 + TOL:
-                    fx += my_k * (dx / dist)
-                    fy += my_k * (dy / dist)
-                elif dist < L0 - TOL:
-                    fx -= my_k * (dx / dist)
-                    fy -= my_k * (dy / dist)
-            norm_f = math.sqrt((fx ** 2) + (fy ** 2)) + 1e-10
+                my_k = K1 if self.__is_an_edge(self.graph[u], v) or self.__is_an_edge(self.graph[v], u) else K2
+                a = max(min((dist - L0) / TOL, 1), -1)
+                fx += my_k * (dx / dist) * a
+                fy += my_k * (dy / dist) * a
+            dic[v] = (fx, fy)
+            sum_sqr_f += fx ** 2 + fy ** 2
+        for v in self.all_nodes:
+            fx, fy = dic[v]
+            # norm_f = math.sqrt((fx ** 2) + (fy ** 2)) + 1e-10
+            norm_f = math.sqrt(sum_sqr_f) + 1e-10
             fx /= norm_f
             fy /= norm_f
             new_x = v.center[0] + (fx * V)
             new_y = v.center[1] + (fy * V)
-            new_x = max(50, min(1024 - 50, new_x))
-            new_y = max(50, min(900 - 50, new_y))
+            new_x = max(50, min(x - 50, new_x))
+            new_y = max(50, min(y - 50, new_y))
             v.center = (new_x, new_y)
             v.rect = v.surf.get_rect(center=v.center)
+            self.__move_node(v)
 
     def __is_in_node(self, position: tuple[int, int]):
         tmp_node = Node(position, None, False)
