@@ -89,13 +89,14 @@ class StackElement:
 
 
 class StackVisualizer:
-    def __init__(self):
+    def __init__(self, menu=None):
         self.stack: list[StackElement] = []
         self.limit = 15
         self.element_tracker = 0
         self.window_surface = pygame.display.set_mode(SCREEN_SIZE, pygame.RESIZABLE)
         self.stack_body = (350, 80, 300, 560)  # x, y, width, height
         self.stack_position = (400, 200, 512, 220)  # x, y, width, height
+        self.menu = menu
 
     def push(self, element: str) -> None:
         if len(element) <= self.limit and element != "":
@@ -161,6 +162,10 @@ class StackVisualizer:
                 if event.type == pygame.QUIT:
                     pygame.quit()
                     return
+                if event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_ESCAPE:
+                        self.menu.enable()
+                        return
                 if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
                     print("My Vrend")
                 if event.type == pygame_gui.UI_TEXT_ENTRY_FINISHED and event.ui_object_id == '#text_entry':
