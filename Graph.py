@@ -251,8 +251,8 @@ class Edge(pygame.sprite.Sprite):
         middleY = (start.y + end.y) / 2
         # hline_x1 = middleX - 25 * math.cos(angle)
         # hline_y1 = middleY + 25 * math.sin(angle)
-        hline_x2 = middleX + 35 * math.cos(angle)
-        hline_y2 = middleY - 35 * math.sin(angle)
+        hline_x2 = middleX + 35 * math.cos(angle+math.pi)
+        hline_y2 = middleY - 35 * math.sin(angle+math.pi)
         w_rect = w.get_rect()
         w_rect.center = (hline_x2, hline_y2)
         self.surf.blit(w, w_rect)
@@ -412,6 +412,7 @@ class Graph_Simulator:
             src.clicked_off()
             dst.clicked_off()
         else:
+            weight = self.__get_weight_while_add(src, dst)
             edge2 = self.__is_an_edge(self.graph[dst], src)
             edge2.weight = weight
             edge.weight = weight
@@ -489,7 +490,6 @@ class Graph_Simulator:
         q = []
         if not mid:
             return
-        print(mid)
         start, end, weight = 0, 0, 0
         while True:
             self.clock.tick(360)
