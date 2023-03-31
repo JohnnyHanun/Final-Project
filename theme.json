@@ -67,6 +67,26 @@
                 "resource": "C:\\Users\\yoyom\\Desktop\\Project\\venv\\Lib\\site-packages\\pygame_gui\\data\\FiraCode-Regular.ttf"
             }
         }
+    },
+    "Weight_Button": {
+        "colours":
+         {
+             "dark_bg": "#7FFFD4",
+             "selected_bg": "#FFFFFF",
+             "normal_text": "#1e38d7",
+             "selected_text": "#FFFFFF",
+             "normal_border": "#FFFFFF"
+         },
+        "font": {
+            "name": "firaCode",
+            "size": "23",
+            "bold": "",
+            "italic": "1",
+            "regular_resource": {
+                "package": "pygame_gui",
+                "resource": "C:\\Users\\yoyom\\Desktop\\Project\\venv\\Lib\\site-packages\\pygame_gui\\data\\FiraCode-Regular.ttf"
+            }
+        }
     }
 
 }

@@ -3,7 +3,11 @@ import random
 import os
 import heapq
 from typing import TypeVar, Union, Iterable
+
+import pygame_gui
+
 from constants import *
+
 os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
 import time
 import pygame
@@ -17,6 +21,7 @@ from pygame.locals import (
 ROOT = tk.Tk()
 ROOT.overrideredirect(1)
 ROOT.withdraw()
+
 
 # ROOT.
 
@@ -240,7 +245,7 @@ class Edge(pygame.sprite.Sprite):
         start, end, surface = pygame.Vector2(self.start_point), pygame.Vector2(self.end_point), self.surf
         str_weight = str(self.weight)
         w = pygame.font.SysFont("arial", 22, True, True).render("1" if self.weight == -1 else str_weight, True,
-                                                                (127,255,212))
+                                                                (127, 255, 212))
         angle = math.atan2(end.x - start.x, end.y - start.y)
         middleX = (start.x + end.x) / 2
         middleY = (start.y + end.y) / 2
@@ -250,8 +255,8 @@ class Edge(pygame.sprite.Sprite):
         hline_y2 = middleY - 35 * math.sin(angle)
         w_rect = w.get_rect()
         w_rect.center = (hline_x2, hline_y2)
-        self.surf.blit(w,w_rect)
-        #pygame.draw.line(self.surf, self.color, (hline_x1,hline_y1), (hline_x2, hline_y2), width=4)
+        self.surf.blit(w, w_rect)
+        # pygame.draw.line(self.surf, self.color, (hline_x1,hline_y1), (hline_x2, hline_y2), width=4)
 
     def set_weight(self, new_weight: int):
         self.weight = new_weight
@@ -274,6 +279,39 @@ class Graph_Simulator:
         self.menu = menu
         if file_name:
             self.__create_graph_from_file(file_name)
+
+    def __get_weight_while_add(self, mid, tmp, edge=None):
+        start, end = self.__calc_position(tmp.center, mid.center)
+        end1, end2 = self.__calc_position(mid.center, tmp.center)
+        middleX = (start[0] + end[0]) / 2
+        middleY = (start[1] + end[1]) / 2
+        manager = pygame_gui.UIManager((SCREEN_SIZE[0], SCREEN_SIZE[1]), "theme.json")
+        # rect = pygame.Rect(
+        #     ((SCREEN_SIZE[0] - 280) // 2, (SCREEN_SIZE[1] -100) // 2),
+        #     (280,100))
+        rect = pygame.Rect((middleX - 40, middleY - 20), (80, 40))
+
+        weight_input = pygame_gui.elements.ui_text_entry_line.UITextEntryLine(object_id="Weight_Button",
+                                                                              relative_rect=rect, manager=manager,
+                                                                              placeholder_text="0")
+        weight_input.set_allowed_characters("numbers")
+        weight_input.focus()
+        while True:
+            time_delta = self.clock.tick(60) / 1000.0
+            for event in pygame.event.get():
+                manager.process_events(event)
+                if event.type == pygame.QUIT:
+                    exit()
+                if event.type == pygame_gui.UI_TEXT_ENTRY_FINISHED:
+                    return 0 if not event.text else int(event.text)
+            if not edge:
+                tmp_edge = Edge(None, None, start, end1, is_directed=self.is_directed, is_weighted=False)
+                self.window_surface.blit(tmp_edge.surf, tmp_edge.rect)
+            self.clock.tick(144)
+            self.all_graph.draw(self.window_surface)
+            manager.update(time_delta)
+            manager.draw_ui(self.window_surface)
+            pygame.display.update()
 
     def __create_graph_from_file(self, file_name: str):
         try:
@@ -332,6 +370,8 @@ class Graph_Simulator:
         return edge_dict.get(destination)
 
     def __edit_weight(self):
+        if not self.is_weighted:
+            return
         src: Node = None
         dst: Node = None
         sec = 1000
@@ -354,33 +394,34 @@ class Graph_Simulator:
                         dst = node_pressed
                         dst.clicked_on()
                 self.__refresh_screen()
-        flag = True
         edge = self.__is_an_edge(self.graph[src], dst)
         if not edge:
             src.clicked_off()
             dst.clicked_off()
             return
         weight = 0
-        while flag:
-            if self.is_weighted:
-                q = []
-                edit_edge_while_add(q)
-                weight = q.pop(0)
-                if weight is None:
-                    src.clicked_off()
-                    dst.clicked_off()
-                    return
-                if not self.is_directed:
-                    edge2 = self.edge = self.__is_an_edge(self.graph[dst], src)
-                    edge2.set_weight(weight)
-                    edge2.surf.fill(BLACK_COLOR)
-                edge.set_weight(weight)
-                edge.surf.fill(BLACK_COLOR)
-                edge.draw()
-                src.clicked_off()
-                dst.clicked_off()
-                self.__refresh_screen()
-                return
+        if self.is_directed:
+            edge1 = self.__is_an_edge(self.graph[dst], src)
+            if edge:
+                weight = self.__get_weight_while_add(src, dst, edge1)
+            else:
+                weight = self.__get_weight_while_add(src, dst)
+            edge.weight = weight
+            edge.surf.fill(BLACK_COLOR)
+            edge.draw()
+            src.clicked_off()
+            dst.clicked_off()
+        else:
+            edge2 = self.__is_an_edge(self.graph[dst], src)
+            edge2.weight = weight
+            edge.weight = weight
+            edge.surf.fill(BLACK_COLOR)
+            edge2.surf.fill(BLACK_COLOR)
+            edge.draw()
+            edge2.draw()
+            src.clicked_off()
+            dst.clicked_off()
+        self.__refresh_screen()
 
     def __stabling_graph(self):
         return
@@ -441,12 +482,14 @@ class Graph_Simulator:
         newEdge = Edge(src, dst, end1, start, is_directed=self.is_directed, is_weighted=self.is_weighted, weight=weight)
         self.graph[src][dst] = newEdge
         self.all_graph.add(newEdge)
+        return newEdge
 
     def __add_edge(self, position: tuple[int, int]):
         mid: Node = self.__is_in_node(position)
         q = []
         if not mid:
             return
+        print(mid)
         start, end, weight = 0, 0, 0
         while True:
             self.clock.tick(360)
@@ -465,11 +508,15 @@ class Graph_Simulator:
                         self.window_surface.fill(pygame.Color("black"))
                         for edge in self.graph[tmp]:
                             if edge == mid:
-                                edit_edge_while_add(q)
-                                weight = q.pop(0)
-                                if weight is None:
-                                    return
-                                self.__two_way_edge(self.graph[tmp][mid], mid, tmp, 25,weight=weight)
+                                edge = self.__two_way_edge(self.graph[tmp][mid], mid, tmp, 25, weight=weight)
+                                edge.is_weighted = False
+                                edge.surf.fill(BLACK_COLOR)
+                                edge.draw()
+                                if self.is_weighted:
+                                    weight = self.__get_weight_while_add(mid, tmp, edge)
+                                    edge.weight = weight
+                                    edge.is_weighted = True
+                                    edge.draw()
                                 mid.deg_out += 1
                                 tmp.deg_in += 1
                                 return
@@ -477,10 +524,10 @@ class Graph_Simulator:
                             # q = Queue()
                             # p = Process(target=edit_edge_while_add, args=(q,))
                             # p.run()
-                            edit_edge_while_add(q)
-                            weight = q.pop(0)
-                            if weight is None:
-                                return
+                            if self.is_weighted:
+                                weight = self.__get_weight_while_add(mid, tmp)
+                            # edit_edge_while_add(q)
+                            # weight = q.pop(0)
                         end1, end2 = self.__calc_position(mid.center, tmp.center)
                         edge = Edge(mid, tmp, start, end1, is_directed=self.is_directed, is_weighted=self.is_weighted,
                                     weight=weight)
@@ -678,6 +725,7 @@ class Graph_Simulator:
                     (self.__is_an_edge(self.graph[SRC], DST), self.__is_an_edge(self.graph[DST], SRC)))
             else:
                 edges_to_print.append(self.__is_an_edge(self.graph[SRC], DST))
+
     def __avoiding_pygame_crush(self):
         pygame.event.pump()
         self.clock.tick(144)
@@ -945,7 +993,7 @@ class Graph_Simulator:
                         elements_to_print.add(edge)
             elements_to_print.draw(self.window_surface)
             pygame.display.update()
-            pygame.time.delay(3*sec)
+            pygame.time.delay(3 * sec)
             self.__avoiding_pygame_crush()
         all_colors = [(0, 0, 0), (255, 255, 255), (0, 255, 0)]
         counter = 0
@@ -959,6 +1007,7 @@ class Graph_Simulator:
         self.__refresh_screen()
         pygame.time.delay(5 * sec)
         self.__clean_data_for_algos()
+
     def __BFS(self):
         pygame.event.pump()
         queue = []
@@ -1023,7 +1072,7 @@ class Graph_Simulator:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     pygame.quit()
-                    return
+                    exit()
                 elif event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_ESCAPE:
                         self.menu.enable()
