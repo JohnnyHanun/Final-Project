@@ -70,9 +70,9 @@ class Node(pygame.sprite.Sprite):
     def __str__(self):
         return self.name
 
-    def clicked_on(self):
+    def clicked_on(self, color: tuple[int, int, int] | str = 'Blue'):
         self.surf.fill(pygame.Color('Black'))
-        pygame.draw.circle(self.surf, 'Blue', (NODE_R, NODE_R), NODE_R)
+        pygame.draw.circle(self.surf, color, (NODE_R, NODE_R), NODE_R)
         pygame.draw.circle(self.surf, 'Green', (NODE_R, NODE_R), NODE_R - 4)
         self.surf.set_colorkey((0, 0, 0), RLEACCEL)
         self.rect = self.surf.get_rect(center=self.center)
@@ -83,6 +83,8 @@ class Node(pygame.sprite.Sprite):
         pygame.draw.circle(self.surf, 'Green', (NODE_R, NODE_R), NODE_R)
         self.surf.set_colorkey((0, 0, 0), RLEACCEL)
         self.rect = self.surf.get_rect(center=self.center)
+        self.text_view = pygame.font.SysFont("arial", 25, True, False).render(self.name, True,
+                                                                              (255, 255, 255))
         self.surf.blit(self.text_view, (20, 20))
         self.is_clicked = False
 
@@ -251,8 +253,8 @@ class Edge(pygame.sprite.Sprite):
         middleY = (start.y + end.y) / 2
         # hline_x1 = middleX - 25 * math.cos(angle)
         # hline_y1 = middleY + 25 * math.sin(angle)
-        hline_x2 = middleX + 35 * math.cos(angle+math.pi)
-        hline_y2 = middleY - 35 * math.sin(angle+math.pi)
+        hline_x2 = middleX + 35 * math.cos(angle + math.pi)
+        hline_y2 = middleY - 35 * math.sin(angle + math.pi)
         w_rect = w.get_rect()
         w_rect.center = (hline_x2, hline_y2)
         self.surf.blit(w, w_rect)
