@@ -1,7 +1,6 @@
 import copy
 import math
-
-import constants
+import sys
 from Graph import Edge
 from Graph import Node
 from Utils import Utils
@@ -11,6 +10,7 @@ from constants import *
 import pygame_gui
 import pygame_menu
 
+sys.setrecursionlimit(10000)
 theme = pygame_menu.Theme(
     background_color=(192, 192, 192),
     cursor_color=(255, 255, 255),
@@ -30,11 +30,12 @@ class BSTNode(Node):
     def __init__(self, center: tuple[int, int], value: int, left: Node = None, right: Node = None, parent: Node = None,
                  all_nodes=None):
         super().__init__(center, all_nodes, name=str(value))
-        self.height = 0
+        self.height = 1
         self.value = value
         self.left: BSTNode = left
         self.right: BSTNode = right
         self.parent: BSTNode = parent
+        self.is_right_son = False
 
     def __lt__(self, other):
         return self.value < other.value
@@ -50,16 +51,17 @@ class BSTNode(Node):
 
 
 class BSTVisualizer:
-    def __init__(self):
+    def __init__(self,main_menu):
         pygame.init()
         pygame.display.set_caption('BST Visualizer')
+        self.main_menu = main_menu
         self.window_surface = pygame.display.set_mode(SCREEN_SIZE, pygame.RESIZABLE)
         self.all_nodes = pygame.sprite.Group()
         self.all_edges = pygame.sprite.Group()
         self.clock = pygame.time.Clock()
         self.root = None
         self.all_values: dict[int, BSTNode] = {}
-        self.is_AVL = False
+        self.is_AVL = True
         self.animation_speed = 150
         self.__setup_menu()
 
@@ -170,7 +172,7 @@ class BSTVisualizer:
         btn4.set_onmouseleave(button_onmouseleave)
         btn4.translate(0, 60 + 50)
 
-        btn5 = self.menu.add.toggle_switch("AVL Tree?", False, font_size=30, font_color=BLACK_COLOR,
+        btn5 = self.menu.add.toggle_switch("AVL Tree?", self.is_AVL, font_size=30, font_color=BLACK_COLOR,
                                            toggleswitch_id='AVL',
                                            onchange=self.__set_is_AVL, width=100)
         btn5.translate(-8, -440)
@@ -200,6 +202,7 @@ class BSTVisualizer:
         self.all_values = {}
         self.all_nodes.empty()
         self.all_edges.empty()
+        self.__deleteTree(self.root)
         self.root = None
 
     def __move_all_nodes_right(self, root: BSTNode):
@@ -266,12 +269,10 @@ class BSTVisualizer:
         return y
 
     def __delete_node_avl_helper(self, root: BSTNode, value: int, bro: list[BSTNode]):
-
         # Find the node to be deleted and remove it
         if root is None:
             return root
         elif value < root.value:
-
             bro.append(root)
             root.left = self.__delete_node_avl_helper(root.left, value, bro)
         elif value > root.value:
@@ -317,18 +318,18 @@ class BSTVisualizer:
                 return self.__leftRotate(root)
         return root
 
-    def __add_node_avl_helper(self, root: BSTNode, value: int):
+    def __add_node_avl_helper(self, root: BSTNode, value: int, parent=None):
         # Find the correct location and insert the node
         if not root:
             X, Y = 0, 0
-            new_node = BSTNode((X, Y), value, parent=None)
+            new_node = BSTNode((X, Y), value, parent=parent)
             self.all_values[value] = new_node
             self.all_nodes.add(new_node)
             return new_node
         elif value < root.value:
-            root.left = self.__add_node_avl_helper(root.left, value)
+            root.left = self.__add_node_avl_helper(root.left, value, root)
         else:
-            root.right = self.__add_node_avl_helper(root.right, value)
+            root.right = self.__add_node_avl_helper(root.right, value, root)
 
         root.height = 1 + max(self.__getHeight(root.left),
                               self.__getHeight(root.right))
@@ -350,29 +351,27 @@ class BSTVisualizer:
                 return self.__leftRotate(root)
         return root
 
-    def __add_node_helper(self, node: BSTNode, value: int, bro: list[BSTNode], parent=None):
+    def __add_node_helper(self, node: BSTNode, value: int, bro: list[BSTNode], parent=None, ):
         if node is not None and node.value == value:
             bro.append(node)
             return node
         if node is None:
+            right = 0
             if parent is None:
                 X, Y = MID_POS_TREE
             else:
                 if parent.value > value:
                     ##LEFT##
-                    X = parent.center[0] - 3 * NODE_R
-                    Y = parent.center[1] + 3 * NODE_R
+                    X = parent.center[0] - 2 * NODE_R
+                    Y = parent.center[1] + 2 * NODE_R
+                    right = 1
                 else:
                     ##RIGHT##
-                    X = parent.center[0] + 3 * NODE_R
-                    Y = parent.center[1] + 3 * NODE_R
+                    X = parent.center[0] + 2 * NODE_R
+                    Y = parent.center[1] + 2 * NODE_R
+                    right = 2
             new_node = BSTNode((X, Y), value, parent=parent)
-            if parent is not None:
-                start, _ = self.__calc_position(new_node.center, parent.center)
-                end, _ = self.__calc_position(parent.center, new_node.center)
-                edge = Edge(parent, new_node, start_point=start, end_point=end, is_weighted=False,
-                            is_directed=True)
-                self.all_edges.add(edge)
+            new_node.is_right_son = right
             self.all_values[value] = new_node
             self.all_nodes.add(new_node)
             bro.append(new_node)
@@ -456,6 +455,65 @@ class BSTVisualizer:
         for node in bro:
             node.clicked_off()
 
+    def __find_node(self, root: BSTNode, value: int):
+        if root is None:
+            return
+        if root.value == value:
+            return root
+        if value < root.value:
+            return self.__find_node(root.left, value)
+        return self.__find_node(root.right, value)
+
+    def __diff_parent(self, root: BSTNode):
+        if root is None:
+            return
+        if root.parent is None:
+            return
+        parent: BSTNode = root.parent
+        if parent.is_right_son != root.is_right_son:
+            return parent
+        return self.__diff_parent(parent)
+
+    def __fix_position(self, root: BSTNode, move: int):
+        if root is None:
+            return
+        X, Y = root.center
+        X += move
+        Y += NODE_R
+        root.center = (X, Y)
+        self.__fix_position(root.left, move)
+        self.__fix_position(root.right, move)
+
+    def __deleteTree(self, root: BSTNode):
+        if root:
+            self.__deleteTree(root.left)
+            self.__deleteTree(root.right)
+            del root
+
+    def __fix_heights(self, root: BSTNode):
+        if root is None:
+            return
+        root.height = 1 + max(self.__getHeight(root.left),self.__getHeight(root.right))
+        self.__fix_heights(root.left)
+        self.__fix_heights(root.right)
+
+    def __fix_positions_avl_tree(self, root: BSTNode):
+        if root is None:
+            return
+        self.root = self.__add_node_helper(self.root, root.value, [])
+        self.__fix_parents(self.root)
+        Inserted_node: BSTNode = self.__find_node(self.root, root.value)
+        diff_parent = self.__diff_parent(Inserted_node)
+        while diff_parent:
+            if diff_parent is not None and diff_parent is not self.root:
+                if diff_parent.is_right_son == 1:
+                    self.__fix_position(diff_parent, 2 * -NODE_R)
+                else:
+                    self.__fix_position(diff_parent, 2 * NODE_R)
+            diff_parent = self.__diff_parent(diff_parent)
+        self.__fix_positions_avl_tree(root.left)
+        self.__fix_positions_avl_tree(root.right)
+
     def __add_node(self):
         text_input: pygame_menu.widgets.widget.textinput.TextInput = self.menu.get_widget('text_input')
         if not text_input.get_value().isnumeric():
@@ -463,45 +521,33 @@ class BSTVisualizer:
         value = int(text_input.get_value())
         text_input.clear()
         if not self.all_values.get(value):
-            bro: BSTNode = []
+            bro: list[BSTNode] = []
             if not self.is_AVL:
                 self.root = self.__add_node_helper(self.root, value, bro)
             else:
                 self.root = self.__add_node_avl_helper(self.root, value)
+                temp = self.root
+                self.root = None
+                self.__fix_positions_avl_tree(temp)
+                self.__deleteTree(temp)
                 self.root = self.__add_node_helper(self.root, value, bro)
-            self.__fix_parents(self.root)
+                self.__fix_heights(self.root)
+            if not self.is_AVL:
+                Inserted_node: BSTNode = self.__find_node(self.root, value)
+                self.__fix_parents(self.root)
+                diff_parent = self.__diff_parent(Inserted_node)
+                while diff_parent:
+                    if diff_parent is not None and diff_parent is not self.root:
+                        if diff_parent.is_right_son == 1:
+                            self.__fix_position(diff_parent, 2*-NODE_R)
+                        else:
+                            self.__fix_position(diff_parent,2*NODE_R)
+                    diff_parent = self.__diff_parent(diff_parent)
             self.all_nodes.empty()
             self.__draw_new_nodes(self.root)
             self.all_edges.empty()
             self.__draw_new_edges(self.root)
-            if self.root is not None:
-                self.__fix_position_subtree(self.root.left)
-                self.__fix_position_subtree(self.root.right)
-            answer: list[BSTNode] = self.__check_collision()
-            if answer:
-                self.__avoid_collision(self.root)
-            #self.__add_animation(bro)
-            # answer: list[BSTNode] = self.__check_collision()
-            # counter = 0
-            # if answer:
-            #     self.__avoid_collision(self.root)
-            #     answer = self.__check_collision()
-            #     while answer  and counter != 1:
-            #         if max(answer) > self.root and min(answer) > self.root:
-            #             self.__avoid_collision(self.root.right)
-            #         elif max(answer) < self.root and min(answer) < self.root:
-            #             self.__avoid_collision(self.root.left)
-            #         else:
-            #             self.__avoid_collision(self.root)
-            #         answer = self.__check_collision()
-            #         for i in answer:
-            #             print(i)
-            #         counter += 1
-            # print("###################")
-            # for i in answer:
-            #     print(f'{str(i)} = {i.center}')
-            # print("###################")
-
+            self.__add_animation(bro)
 
             # print("*******************")
             # for i in answer:
@@ -537,12 +583,12 @@ class BSTVisualizer:
         if root.parent is not None:
             if root.parent.value > root.value:
                 ##LEFT##
-                X = root.parent.center[0] - 3 * NODE_R
-                Y = root.parent.center[1] + 3 * NODE_R
+                X = root.parent.center[0] - NODE_R
+                Y = root.parent.center[1] + NODE_R
             else:
                 ##RIGHT##
-                X = root.parent.center[0] + 3 * NODE_R
-                Y = root.parent.center[1] + 3 * NODE_R
+                X = root.parent.center[0] + NODE_R
+                Y = root.parent.center[1] + NODE_R
             root.center = (X, Y)
             root.clicked_off()
             e = self.__find_edge(root.parent, root)
@@ -598,6 +644,7 @@ class BSTVisualizer:
     def __draw_new_nodes(self, root: BSTNode):
         if root is None:
             return
+        root.clicked_off()
         self.all_nodes.add(root)
         self.__draw_new_nodes(root.left)
         self.__draw_new_nodes(root.right)
@@ -622,7 +669,6 @@ class BSTVisualizer:
         if last_node.parent is None:
             last_node.paint_node(RED)
             self.__refresh_screen(pygame.event.get())
-            self.all_nodes.remove()
             self.__refresh_screen(pygame.event.get())
             pygame.time.delay(sec)
             return
@@ -636,7 +682,6 @@ class BSTVisualizer:
         pygame.time.delay(sec)
         last_node.paint_node(RED)
         self.__refresh_screen(pygame.event.get())
-        self.all_nodes.remove()
         self.__refresh_screen(pygame.event.get())
         pygame.time.delay(sec)
 
@@ -655,16 +700,19 @@ class BSTVisualizer:
                 self.root = self.__delete_node_avl_helper(self.root, value, bro)
             self.__delete_animation(bro)
             self.__fix_parents(self.root)
-            self.all_nodes = pygame.sprite.Group()
+            temp = self.root
+            self.root = None
+            self.__fix_positions_avl_tree(temp)
+            self.all_nodes.empty()
             self.__draw_new_nodes(self.root)
-            self.all_edges = pygame.sprite.Group()
+            self.all_edges.empty()
             self.__draw_new_edges(self.root)
-            if self.root is not None:
-                self.__fix_position_subtree(self.root.left)
-                self.__fix_position_subtree(self.root.right)
-            answer: BSTNode | bool = self.__check_collision()
-            if answer:
-                self.__avoid_collision(self.root)
+            # if self.root is not None:
+            #     self.__fix_position_subtree(self.root.left)
+            #     self.__fix_position_subtree(self.root.right)
+            # answer: BSTNode | bool = self.__check_collision()
+            # if answer:
+            #     self.__avoid_collision(self.root)
 
     def __Inorder(self, root: BSTNode):
         if root is None:
@@ -673,7 +721,7 @@ class BSTVisualizer:
         root.paint_node(ORANGE)
         self.__refresh_screen([])
         pygame.time.delay(self.animation_speed)
-        print(root.value, f'parent = {str(root.parent)}, {root.center}')
+        print(root.value, f'parent = {str(root.parent)}, {root.height}')
         self.__Inorder(root.right)
 
     def __Preorder(self, root: BSTNode):
@@ -712,6 +760,10 @@ class BSTVisualizer:
             for event in events:
                 if event.type == pygame.QUIT:
                     exit()
+                if event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_ESCAPE:
+                        self.main_menu.enable()
+                        return
                 if event.type == pygame.KEYDOWN and keyboard[pygame.K_RETURN] or event.__dict__.get('key') and \
                         event.__dict__['key'] == RIGHT_ENTER_KEY:
                     self.menu.get_widget('add').apply()

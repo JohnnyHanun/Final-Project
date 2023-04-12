@@ -8,6 +8,7 @@ from pygame_menu.examples import create_example_window
 from Graph import Graph_Simulator
 from typing import Optional
 from StackVisualizer import StackVisualizer
+from BinarySearchTree import BSTVisualizer
 from constants import *
 import subprocess
 import sys
@@ -98,6 +99,12 @@ def stack_init():
     main_menu.full_reset()
     main_menu.enable()
 
+def BST_init():
+    global main_menu
+    BSTVisualizer(main_menu=main_menu).run()
+    main_menu.disable()
+    main_menu.full_reset()
+    main_menu.enable()
 
 def main_background() -> None:
     """
@@ -165,6 +172,7 @@ def main(test: bool = False) -> None:
 
     main_menu.add.button('Graph', graph_menu)
     main_menu.add.button('Stack', stack_init)
+    main_menu.add.button('Binary Search Tree', BST_init)
     main_menu.add.button('Quit', pygame_menu.events.EXIT)
 
     # -------------------------------------------------------------------------
