@@ -433,6 +433,8 @@ class BSTVisualizer:
 
     def __add_animation(self, bro: list[BSTNode]):
         last_node: BSTNode = bro.pop(-1)
+        if last_node not in self.all_nodes:
+            return
         if last_node is self.root:
             return
         sec = self.animation_speed
@@ -516,9 +518,14 @@ class BSTVisualizer:
 
     def __add_node(self):
         text_input: pygame_menu.widgets.widget.textinput.TextInput = self.menu.get_widget('text_input')
-        if not text_input.get_value().isnumeric():
+        value = text_input.get_value()
+        try:
+            value = int(value)
+        except ValueError:
+            text_input.clear()
             return
-        value = int(text_input.get_value())
+        if value > 9999 or value < -9999:
+            return
         text_input.clear()
         if not self.all_values.get(value):
             bro: list[BSTNode] = []
@@ -632,7 +639,7 @@ class BSTVisualizer:
     def __draw_new_edges(self, root: BSTNode):
         if root is None:
             return
-        if root.parent is not None:
+        if root.parent is not None and root in self.all_nodes:
             start, _ = self.__calc_position(root.center, root.parent.center)
             end, _ = self.__calc_position(root.parent.center, root.center)
             e = Edge(root.parent, root, start_point=start, end_point=end, is_weighted=False,
@@ -645,7 +652,9 @@ class BSTVisualizer:
         if root is None:
             return
         root.clicked_off()
-        self.all_nodes.add(root)
+        X, Y = root.center
+        if self.menu.get_position()[0] - NODE_R > X > 0 + NODE_R and Y < SCREEN_SIZE[1]:
+            self.all_nodes.add(root)
         self.__draw_new_nodes(root.left)
         self.__draw_new_nodes(root.right)
 

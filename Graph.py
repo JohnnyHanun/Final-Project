@@ -2,6 +2,7 @@ import math
 import random
 import os
 import heapq
+from tkinter import simpledialog
 from typing import TypeVar, Union, Iterable
 
 import pygame_gui
@@ -13,7 +14,6 @@ import time
 import pygame
 import tkinter as tk
 
-from tkinter import simpledialog
 from pygame.locals import (
     RLEACCEL,
 )
@@ -46,7 +46,7 @@ class Node(pygame.sprite.Sprite):
         self.surf = pygame.Surface((2 * NODE_R, 2 * NODE_R))
         self.image = self.surf
         self.name = "" if not draw else name
-        self.text_view = pygame.font.SysFont("arial", 25, True, False).render("" if not draw else self.name, True,
+        self.text_view = pygame.font.SysFont("arial", 22, True, False).render("" if not draw else self.name, True,
                                                                               (255, 255, 255))
         self.is_clicked = False
         if draw:
@@ -54,7 +54,7 @@ class Node(pygame.sprite.Sprite):
         self.surf.set_colorkey((0, 0, 0), RLEACCEL)
         self.rect = self.surf.get_rect(center=self.center)
         self.all_nodes = all_nodes
-        self.surf.blit(self.text_view, (20, 20))
+        self.surf.blit(self.text_view, self.text_view.get_rect(center=self.surf.get_rect().center))
         self.algo_node, self.algo_edge, self.self_weight = None, None, math.inf
         self.deg_in, self.deg_out = 0, 0
 
@@ -83,9 +83,10 @@ class Node(pygame.sprite.Sprite):
         pygame.draw.circle(self.surf, 'Green', (NODE_R, NODE_R), NODE_R)
         self.surf.set_colorkey((0, 0, 0), RLEACCEL)
         self.rect = self.surf.get_rect(center=self.center)
-        self.text_view = pygame.font.SysFont("arial", 25, True, False).render(self.name, True,
+        self.text_view = pygame.font.SysFont("arial", 22, True, False).render(self.name, True,
                                                                               (255, 255, 255))
-        self.surf.blit(self.text_view, (20, 20))
+        #text.get_rect(center = window.get_rect().center)
+        self.surf.blit(self.text_view,  self.text_view.get_rect(center = self.surf.get_rect().center))
         self.is_clicked = False
 
     def move(self, mouse_pos: tuple[int, int]):
