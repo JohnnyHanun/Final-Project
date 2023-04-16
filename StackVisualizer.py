@@ -48,7 +48,7 @@ class StackElement:
         self.element = pygame.Rect((x, y, w, h))
         return self
 
-    def pushAnimation(self, element_tracker: int):
+    def pushAnimation(self, element_tracker: int, speed: int = TEN):
         clock = pygame.time.Clock()
         rect = pygame.Rect(STARTING_POS)
         x, y, w, h = ELEMENT_POS
@@ -61,7 +61,7 @@ class StackElement:
         while rect.y <= y + h:
             clock.tick(30)
             if rect.y <= y + h:
-                rect.y += 15
+                rect.y += speed
             pygame.draw.rect(self.windows_surface, self.element_color, rect)
             self.windows_surface.blit(self.text_view, (x1, rect.y))
 
@@ -72,7 +72,7 @@ class StackElement:
 
         return self
 
-    def popAnimation(self):
+    def popAnimation(self, speed: int = TEN):
         clock = pygame.time.Clock()
         rect = pygame.Rect(self.element)
         prev_rect = pygame.Rect(self.element)
@@ -82,7 +82,7 @@ class StackElement:
             clock.tick(30)
             if rect.y > y:
                 prev_rect.y = rect.y
-                rect.y -= TEN
+                rect.y -= speed
             pygame.draw.rect(self.windows_surface, self.element_color, rect)
             self.windows_surface.blit(self.text_view, (self.text_pos[0], rect.y))
 
@@ -107,7 +107,9 @@ class StackVisualizer:
         self.stack_body = (350, 80, 300, 560)  # x, y, width, height
         self.stack_position = (400, 200, 512, 220)  # x, y, width, height
         self.main_menu = menu
+        self.animation_speed = TEN
         self.__setup_menu()
+
 
     def __setup_menu(self):
 
@@ -161,7 +163,24 @@ class StackVisualizer:
         btn4.set_onmouseover(button_onmouseover)
         btn4.set_onmouseleave(button_onmouseleave)
         btn4.translate(0, 60 + 50)
+
+        btn6 = self.menu.add.range_slider('', 10, (0, 50), 1,
+                                          font_color=BLACK_COLOR,
+                                          background_color=WHITE_COLOR,
+                                          width=200,
+                                          range_text_value_color=BLACK_COLOR,
+                                          font_size=25,
+                                          padding=10,
+                                          rangeslider_id='range_slider',
+                                          value_format=lambda x: str(int(x)))
+
+        btn6.set_onchange(self.__set_animation_speed)
+        btn7 = self.menu.add.label('Animation Speed: ' + str(self.animation_speed),
+                                   font_size=20, font_color=BLACK_COLOR, label_id='speed_label')
+        btn6.translate(0, -400)
+        btn7.translate(0, -405)
         ############ Error Menu ############
+
         self.__submenu = pygame_menu.Menu('Error!', 450, 200, theme=theme,
                                           mouse_motion_selection=True, center_content=False)
         self.__submenu.add.label('Stack is empty', font_size=40, font_color=BLACK_COLOR)
@@ -178,6 +197,11 @@ class StackVisualizer:
         go_back.set_onmouseleave(button_onmouseleave)
         ############ Error Menu ############
 
+    def __set_animation_speed(self, *args):
+        self.animation_speed = int(args[0])
+        text_input: pygame_menu.widgets.widget.label.Label = self.menu.get_widget('speed_label')
+        text_input.set_title('Animation Speed: ' + str(self.animation_speed))
+
     def push(self) -> None:
         text_input: pygame_menu.widgets.widget.textinput.TextInput = self.menu.get_widget('text_input')
         value = text_input.get_value()
@@ -186,7 +210,8 @@ class StackVisualizer:
             self.element_tracker += 1
             index = self.element_tracker if (self.element_tracker < NINE) else 8
             self.stack.append(StackElement(window_surface=self.window_surface,
-                                           text=value, element_color=COLOR).pushAnimation(index))
+                                           text=value, element_color=COLOR).pushAnimation(index,
+                                                                                          speed=self.animation_speed))
             text_input.clear()
             return
 
@@ -196,7 +221,7 @@ class StackVisualizer:
             while self.__submenu.is_enabled():
                 self.__submenu.mainloop(self.window_surface, disable_loop=False)
             return
-        self.stack[-1].popAnimation()
+        self.stack[-1].popAnimation(speed=self.animation_speed)
         self.element_tracker -= 1
         return self.stack.pop()
 
