@@ -2,35 +2,16 @@ import math
 import random
 import os
 import heapq
-from tkinter import simpledialog
-from typing import TypeVar, Union, Iterable
-
+import time
+import pygame
 import pygame_gui
 
 from constants import *
-
-os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
-import time
-import pygame
-import tkinter as tk
-
 from pygame.locals import (
     RLEACCEL,
 )
 
-ROOT = tk.Tk()
-ROOT.overrideredirect(1)
-ROOT.withdraw()
-
-
-# ROOT.
-
-
-def edit_edge_while_add(queue):
-    USER_INP = simpledialog.askinteger(title="Edit Weight",
-                                       prompt="Please Enter Weight then press Enter")
-    # queue.put(USER_INP)
-    queue.append(USER_INP)
+os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
 
 
 class Node(pygame.sprite.Sprite):
@@ -85,8 +66,8 @@ class Node(pygame.sprite.Sprite):
         self.rect = self.surf.get_rect(center=self.center)
         self.text_view = pygame.font.SysFont("arial", 22, True, False).render(self.name, True,
                                                                               (255, 255, 255))
-        #text.get_rect(center = window.get_rect().center)
-        self.surf.blit(self.text_view,  self.text_view.get_rect(center = self.surf.get_rect().center))
+        # text.get_rect(center = window.get_rect().center)
+        self.surf.blit(self.text_view, self.text_view.get_rect(center=self.surf.get_rect().center))
         self.is_clicked = False
 
     def move(self, mouse_pos: tuple[int, int]):
