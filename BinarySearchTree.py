@@ -712,9 +712,10 @@ class BSTVisualizer:
             temp = self.root
             self.root = None
             self.__fix_positions_avl_tree(temp)
-            self.all_nodes.empty()
+            self.__deleteTree(temp)
+            self.all_nodes = pygame.sprite.Group()
             self.__draw_new_nodes(self.root)
-            self.all_edges.empty()
+            self.all_edges = pygame.sprite.Group()
             self.__draw_new_edges(self.root)
             # if self.root is not None:
             #     self.__fix_position_subtree(self.root.left)

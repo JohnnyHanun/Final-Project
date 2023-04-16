@@ -13,11 +13,6 @@ from constants import *
 import subprocess
 import sys
 import os
-pygame.init()
-infoObject = pygame.display.Info()
-# pygame.display.set_mode((infoObject.current_w, infoObject.current_h))
-SCREEN_SIZE = (infoObject.current_w, infoObject.current_h)
-# Constants and global variables
 FPS = 60
 is_weighted_graph = [True]
 clock: Optional['pygame.time.Clock'] = None
