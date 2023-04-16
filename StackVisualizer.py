@@ -133,14 +133,14 @@ class StackVisualizer:
             """
             Set the background color of buttons if entered.
             """
-            if w.get_id() == 'pop':
+            if w.get_id() == 'pop' or w.get_id() == 'ClearStack':
                 w.set_background_color((255, 102, 102))
 
         def button_onmouseleave(w: 'pygame_menu.widgets.Widget', _) -> None:
             """
             Set the background color of buttons if leaved.
             """
-            if w.get_id() == 'pop' or w.get_id() == 'ClearTree':
+            if w.get_id() == 'pop' or w.get_id() == 'ClearStack':
                 w.set_background_color(RED)
 
         self.menu = pygame_menu.Menu("Stack Menu", 300, 847, theme=theme, position=(100, 0))
@@ -159,7 +159,6 @@ class StackVisualizer:
                                    background_color=(0, 204, 0), cursor=pygame_menu.locals.CURSOR_HAND)
         btn.set_onmouseover(button_onmouseover)
         btn.set_onmouseleave(button_onmouseleave)
-        # btn._font_color = (255,255,255)
         btn1 = self.menu.add.button("   Pop   ", self.pop, border_color=WHITE_COLOR, font_color=BLACK_COLOR,
                                     font_size=30,
                                     button_id='pop',
@@ -173,6 +172,15 @@ class StackVisualizer:
         self.__submenu = pygame_menu.Menu('Error: ' + error.info, 640, 480, theme=theme,
                                           mouse_motion_selection=True, center_content=False)
         self.__submenu.add.vertical_margin(150)
+
+        btn4 = self.menu.add.button("Clear Stack", self.__clear_stack, border_color=WHITE_COLOR,
+                                    font_color=BLACK_COLOR,
+                                    font_size=30,
+                                    button_id='ClearStack',
+                                    background_color=RED, cursor=pygame_menu.locals.CURSOR_HAND)
+        btn4.set_onmouseover(button_onmouseover)
+        btn4.set_onmouseleave(button_onmouseleave)
+        btn4.translate(0, 60 + 50)
 
         def error():
             self.__submenu.disable()
@@ -226,6 +234,16 @@ class StackVisualizer:
                          border_top_right_radius=0)
         self.__show()
         pygame.display.update()
+
+    def __clear_stack(self):
+        if not self.stack:
+            self.__submenu.enable()
+            while self.__submenu.is_enabled():
+                self.__submenu.mainloop(self.window_surface, disable_loop=False)
+            return
+        while self.stack:
+            self.pop()
+            self.__refresh_screen([])
 
     def run(self):
         pygame.init()
