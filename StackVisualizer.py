@@ -135,6 +135,8 @@ class StackVisualizer:
             """
             if w.get_id() == 'pop' or w.get_id() == 'ClearStack':
                 w.set_background_color((255, 102, 102))
+            else:
+                w.set_background_color((153, 255, 153))
 
         def button_onmouseleave(w: 'pygame_menu.widgets.Widget', _) -> None:
             """
@@ -142,6 +144,8 @@ class StackVisualizer:
             """
             if w.get_id() == 'pop' or w.get_id() == 'ClearStack':
                 w.set_background_color(RED)
+            else:
+                w.set_background_color((0, 204, 0))
 
         self.menu = pygame_menu.Menu("Stack Menu", 300, 847, theme=theme, position=(100, 0))
         text_input = self.menu.add.text_input(
@@ -169,9 +173,9 @@ class StackVisualizer:
         btn1.translate(70, 0 + 50)
 
         error = Error('Stack is empty', fontsize=theme.widget_font_size * 1.25)
-        self.__submenu = pygame_menu.Menu('Error: ' + error.info, 640, 480, theme=theme,
+        self.__submenu = pygame_menu.Menu('Error: ' + error.info, 450, 200, theme=theme,
                                           mouse_motion_selection=True, center_content=False)
-        self.__submenu.add.vertical_margin(150)
+        self.__submenu.add.vertical_margin(50)
 
         btn4 = self.menu.add.button("Clear Stack", self.__clear_stack, border_color=WHITE_COLOR,
                                     font_color=BLACK_COLOR,
@@ -188,7 +192,7 @@ class StackVisualizer:
 
         go_back = self.__submenu.add.button('OK', error, border_color=ORANGE, font_color=BLACK_COLOR,
                                             font_size=30,
-                                            button_id='push',
+                                            button_id='ok',
                                             background_color=(0, 204, 0), cursor=pygame_menu.locals.CURSOR_HAND)
         go_back.set_onmouseover(button_onmouseover)
         go_back.set_onmouseleave(button_onmouseleave)
@@ -206,7 +210,6 @@ class StackVisualizer:
             return
 
     def pop(self):
-        print(self.stack)
         if not self.stack:
             self.__submenu.enable()
             while self.__submenu.is_enabled():
