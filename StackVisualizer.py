@@ -1,13 +1,41 @@
 import pygame
 import pygame_gui
-from tkinter import messagebox
-import tkinter
+import pygame_menu
 from constants import *
-root = tkinter.Tk()
-root.withdraw()
-from pygame.locals import (
-    RLEACCEL,
+
+from typing import Dict, Union, Optional, List
+
+theme = pygame_menu.Theme(
+    background_color=(192, 192, 192),
+    cursor_color=(255, 255, 255),
+    cursor_selection_color=(80, 80, 80, 120),
+    scrollbar_color=(39, 41, 42),
+    scrollbar_slider_color=(65, 66, 67),
+    scrollbar_slider_hover_color=(90, 89, 88),
+    selection_color=(255, 255, 255),
+    title_background_color=(47, 48, 51),
+    title_font_color=(215, 215, 215),
+    widget_font_color=(200, 200, 200),
+    widget_selection_effect=pygame_menu.widgets.NoneSelection()
 )
+
+
+class Error():
+    """
+    Planet object.
+    """
+    button: Optional['pygame_menu.widgets.Button']
+    fontsize: int
+    info: str
+
+    def __init__(
+            self,
+            info: str,
+            fontsize: Union[int, float]) -> None:
+        self.button = None
+        self.fontsize = int(fontsize)
+        self.info = info
+        self.name = ''
 
 
 class StackElement:
@@ -24,7 +52,6 @@ class StackElement:
         self.text_view = pygame.font.SysFont("arial", font_size, True, True).render(text, True, text_color)
         self.windows_surface = window_surface
 
-    # def set_pos(self,text_pos: tuple[int, int], ):
     def show(self):
         pygame.draw.rect(self.windows_surface, self.element_color, self.element)
         self.windows_surface.blit(self.text_view, self.text_pos)
@@ -49,9 +76,9 @@ class StackElement:
         x1 = x1 - len(self.__text) * 4
         self.text_pos = (x1, y1)
         self.element = pygame.Rect((x, y, w, h))
-        while rect.y <= y+h:
+        while rect.y <= y + h:
             clock.tick(30)
-            if rect.y <= y+h:
+            if rect.y <= y + h:
                 rect.y += 15
             pygame.draw.rect(self.windows_surface, self.element_color, rect)
             self.windows_surface.blit(self.text_view, (x1, rect.y))
@@ -93,23 +120,90 @@ class StackVisualizer:
         self.stack: list[StackElement] = []
         self.limit = 15
         self.element_tracker = 0
-        SCREEN_SIZE1 = (1024 , 900)
-        self.window_surface = pygame.display.set_mode(SCREEN_SIZE1, pygame.RESIZABLE)
+        SCREEN_SIZE1 = (1024, 900)
+        self.window_surface = pygame.display.set_mode(SCREEN_SIZE, pygame.RESIZABLE)
         self.stack_body = (350, 80, 300, 560)  # x, y, width, height
         self.stack_position = (400, 200, 512, 220)  # x, y, width, height
-        self.menu = menu
+        self.main_menu = menu
+        self.__setup_menu()
 
-    def push(self, element: str) -> None:
-        if len(element) <= self.limit and element != "":
+    def __setup_menu(self):
+
+        def button_onmouseover(w: 'pygame_menu.widgets.Widget', _) -> None:
+            """
+            Set the background color of buttons if entered.
+            """
+            if w.get_id() == 'pop':
+                w.set_background_color((255, 102, 102))
+
+        def button_onmouseleave(w: 'pygame_menu.widgets.Widget', _) -> None:
+            """
+            Set the background color of buttons if leaved.
+            """
+            if w.get_id() == 'pop' or w.get_id() == 'ClearTree':
+                w.set_background_color(RED)
+
+        self.menu = pygame_menu.Menu("Stack Menu", 300, 847, theme=theme, position=(100, 0))
+        text_input = self.menu.add.text_input(
+            '',
+            maxwidth=10,
+            textinput_id='text_input',
+            input_underline='_',
+            repeat_keys=False,
+            font_color=WHITE_COLOR,
+            repeat_keys_interval_ms=1000)
+        text_input.translate(0, 25 + 50)
+        btn = self.menu.add.button("   Push   ", self.push, border_color=ORANGE, font_color=BLACK_COLOR,
+                                   font_size=30,
+                                   button_id='push',
+                                   background_color=(0, 204, 0), cursor=pygame_menu.locals.CURSOR_HAND)
+        btn.set_onmouseover(button_onmouseover)
+        btn.set_onmouseleave(button_onmouseleave)
+        # btn._font_color = (255,255,255)
+        btn1 = self.menu.add.button("   Pop   ", self.pop, border_color=WHITE_COLOR, font_color=BLACK_COLOR,
+                                    font_size=30,
+                                    button_id='pop',
+                                    background_color=RED, cursor=pygame_menu.locals.CURSOR_HAND)
+        btn1.set_onmouseover(button_onmouseover)
+        btn1.set_onmouseleave(button_onmouseleave)
+        btn.translate(-65, 49 + 50)
+        btn1.translate(70, 0 + 50)
+
+        error = Error('Stack is empty', fontsize=theme.widget_font_size * 1.25)
+        self.__submenu = pygame_menu.Menu('Error: ' + error.info, 640, 480, theme=theme,
+                                          mouse_motion_selection=True, center_content=False)
+        self.__submenu.add.vertical_margin(150)
+
+        def error():
+            self.__submenu.disable()
+            self.menu.enable()
+
+        go_back = self.__submenu.add.button('OK', error, border_color=ORANGE, font_color=BLACK_COLOR,
+                                            font_size=30,
+                                            button_id='push',
+                                            background_color=(0, 204, 0), cursor=pygame_menu.locals.CURSOR_HAND)
+        go_back.set_onmouseover(button_onmouseover)
+        go_back.set_onmouseleave(button_onmouseleave)
+
+    def push(self) -> None:
+        text_input: pygame_menu.widgets.widget.textinput.TextInput = self.menu.get_widget('text_input')
+        value = text_input.get_value()
+        if len(value) <= self.limit and value != "":
             COLOR = ELEMENT_COLOR1 if (self.element_tracker % TEN) % 2 == 0 else ELEMENT_COLOR2
             self.element_tracker += 1
             index = self.element_tracker if (self.element_tracker < NINE) else 8
             self.stack.append(StackElement(window_surface=self.window_surface,
-                                           text=element, element_color=COLOR).pushAnimation(index))
+                                           text=value, element_color=COLOR).pushAnimation(index))
+            text_input.clear()
+            return
 
     def pop(self):
+        print(self.stack)
         if not self.stack:
-            raise Exception("Stack is Empty , Nothing to Pop!")
+            self.__submenu.enable()
+            while self.__submenu.is_enabled():
+                self.__submenu.mainloop(self.window_surface, disable_loop=False)
+            return
         self.stack[-1].popAnimation()
         self.element_tracker -= 1
         return self.stack.pop()
@@ -124,74 +218,34 @@ class StackVisualizer:
             element.update(index).show()
             index += 1
 
+    def __refresh_screen(self, events):
+        self.menu.update(events)
+        self.window_surface.fill(BLACK_COLOR)
+        self.menu.draw(self.window_surface)
+        pygame.draw.rect(self.window_surface, STACK_COLOR, self.stack_body, 5,
+                         border_top_right_radius=0)
+        self.__show()
+        pygame.display.update()
+
     def run(self):
         pygame.init()
-        pygame.display.set_caption('Stack Visualizer')
-        background = pygame.Surface(SCREEN_SIZE)
-        background.fill(pygame.Color(BLACK_COLOR))
-        manager = pygame_gui.UIManager(SCREEN_SIZE, 'theme.json')
-        container = pygame_gui.core.ui_container.UIContainer(self.window_surface.get_rect(), manager=manager)
-        push_button_layout_rect = pygame.Rect(0, 0, 200, 80)
-        push_button_layout_rect.bottomleft = (30, -50)
-        push_button = pygame_gui.elements.UIButton(relative_rect=push_button_layout_rect,
-                                                   text='Push', manager=manager, container=container,
-                                                   anchors={'left': 'left', 'bottom': 'bottom'}, object_id="#button")
-        pop_button_layout_rect = pygame.Rect(0, 0, 200, 80)
-        pop_button_layout_rect.bottomright = (-30, -50)
-        pop_button = pygame_gui.elements.UIButton(relative_rect=pop_button_layout_rect,
-                                                  text='Pop', manager=manager, container=container,
-                                                  anchors={'right': 'right', 'bottom': 'bottom'})
-        text_input_layout_rect = pygame.Rect(0, 0, 300, 80)
-        text_input_layout_rect.bottomright = (-500, -50)
-        text_input_layout_rect.bottomleft = (120, -50)
-        text_input = pygame_gui.elements.UITextEntryLine(relative_rect=text_input_layout_rect,
-                                                         manager=manager, object_id='#text_entry',
-                                                         anchors={'bottom': 'bottom', 'left_target': push_button,
-                                                                  'left': 'left', 'right': 'right',
-                                                                  'right_target': pop_button})
-        text_input.set_text_length_limit(self.limit)
-        stack_body = pygame.Rect(self.stack_body)
-        text_input.hide()
-        text_flag = False
-        text_input_guide = pygame.font.SysFont("arial", 30, True, True).render(
-            "Please Enter an input up to 15 characters, Then press "
-            "enter to push it:", True, (255, 255, 255))
         clock = pygame.time.Clock()
         while True:
             time_delta = clock.tick(60) / 1000
-            for event in pygame.event.get():
+            events = pygame.event.get()
+            keyboard = pygame.key.get_pressed()
+            for event in events:
                 if event.type == pygame.QUIT:
                     pygame.quit()
                     exit()
                 if event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_ESCAPE:
-                        self.menu.enable()
+                        self.main_menu.enable()
                         pygame.display.set_mode(SCREEN_SIZE)
                         return
-                if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
-                    print("My Vrend")
-                if event.type == pygame_gui.UI_TEXT_ENTRY_FINISHED and event.ui_object_id == '#text_entry':
-                    text_flag = False
-                    text_input.hide()
-                    text_input.clear()
-                    text_input.unfocus()
-                    self.push(event.text)
-                if event.type == pygame_gui.UI_BUTTON_PRESSED and event.ui_element == pop_button:
-                    try:
-                        print(self.pop())
-                    except Exception as e:
-                        messagebox.askokcancel("Error", str(e), icon="error")
-                if event.type == pygame_gui.UI_BUTTON_PRESSED and event.ui_element == push_button:
-                    text_flag = True
-                    text_input.show()
-                    text_input.focus()
-                manager.process_events(event)
-                manager.update(time_delta)
-                self.window_surface.blit(background, (0, 0))
-                pygame.draw.rect(self.window_surface, STACK_COLOR, stack_body, 5,
-                                 border_top_right_radius=0)
-                self.__show()
-                if text_flag:
-                    self.window_surface.blit(text_input_guide, (0, 0))
-                manager.draw_ui(self.window_surface)
-            pygame.display.update()
+                if event.type == pygame.KEYDOWN and keyboard[pygame.K_RETURN] or event.__dict__.get('key') and \
+                        event.__dict__['key'] == RIGHT_ENTER_KEY:
+                    self.menu.get_widget('push').apply()
+                if event.type == pygame.KEYDOWN and keyboard[pygame.K_DELETE]:
+                    self.menu.get_widget('pop').apply()
+            self.__refresh_screen(events)
