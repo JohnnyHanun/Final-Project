@@ -20,24 +20,6 @@ theme = pygame_menu.Theme(
 )
 
 
-class Error():
-    """
-    Planet object.
-    """
-    button: Optional['pygame_menu.widgets.Button']
-    fontsize: int
-    info: str
-
-    def __init__(
-            self,
-            info: str,
-            fontsize: Union[int, float]) -> None:
-        self.button = None
-        self.fontsize = int(fontsize)
-        self.info = info
-        self.name = ''
-
-
 class StackElement:
     def __init__(self,
                  window_surface: pygame.Surface,
@@ -171,12 +153,6 @@ class StackVisualizer:
         btn1.set_onmouseleave(button_onmouseleave)
         btn.translate(-65, 49 + 50)
         btn1.translate(70, 0 + 50)
-
-        error = Error('Stack is empty', fontsize=theme.widget_font_size * 1.25)
-        self.__submenu = pygame_menu.Menu('Error: ' + error.info, 450, 200, theme=theme,
-                                          mouse_motion_selection=True, center_content=False)
-        self.__submenu.add.vertical_margin(50)
-
         btn4 = self.menu.add.button("Clear Stack", self.__clear_stack, border_color=WHITE_COLOR,
                                     font_color=BLACK_COLOR,
                                     font_size=30,
@@ -185,6 +161,10 @@ class StackVisualizer:
         btn4.set_onmouseover(button_onmouseover)
         btn4.set_onmouseleave(button_onmouseleave)
         btn4.translate(0, 60 + 50)
+        ############ Error Menu ############
+        self.__submenu = pygame_menu.Menu('Error!', 450, 200, theme=theme,
+                                          mouse_motion_selection=True, center_content=False)
+        self.__submenu.add.label('Stack is empty', font_size=40, font_color=BLACK_COLOR)
 
         def error():
             self.__submenu.disable()
@@ -196,6 +176,7 @@ class StackVisualizer:
                                             background_color=(0, 204, 0), cursor=pygame_menu.locals.CURSOR_HAND)
         go_back.set_onmouseover(button_onmouseover)
         go_back.set_onmouseleave(button_onmouseleave)
+        ############ Error Menu ############
 
     def push(self) -> None:
         text_input: pygame_menu.widgets.widget.textinput.TextInput = self.menu.get_widget('text_input')
