@@ -187,12 +187,15 @@ class BSTVisualizer:
                                           value_format=lambda x: str(int(x)))
 
         btn6.set_onchange(self.__set_animation_speed)
-        btn7 = self.menu.add.label('Animation Speed', font_size=20, font_color=BLACK_COLOR)
+        btn7 = self.menu.add.label('Animation Speed: ' + str(self.animation_speed),
+                                   font_size=20, font_color=BLACK_COLOR, label_id='speed_label')
         btn6.translate(0, -400)
         btn7.translate(0, -405)
 
     def __set_animation_speed(self, *args):
         self.animation_speed = int(args[0] / 100 * 1000)
+        text_input: pygame_menu.widgets.widget.label.Label = self.menu.get_widget('speed_label')
+        text_input.set_title('Animation Speed: ' + str(self.animation_speed))
 
     def __set_is_AVL(self, *args):
         self.is_AVL = args[0]
