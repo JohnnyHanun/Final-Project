@@ -25,13 +25,14 @@ theme = pygame_menu.Theme(
 
 
 class Heap:
-    def __init__(self, maxsize):
+    def __init__(self, maxsize, min=True):
         self.maxsize = maxsize
         self.size = 0
         self.Heap = [0] * (self.maxsize + 1)
         self.Heap[0] = -1 * sys.maxsize
         self.FRONT = 1
-        self.min = True
+        self.min = min
+        self.Heap[0] = -1 * sys.maxsize if min else sys.maxsize
 
     # Function to return the position of
     # parent for the node currently
@@ -111,7 +112,6 @@ class Heap:
                 self.swap(current, self.parent(current))
                 current = self.parent(current)
 
-
     # Function to print the contents of the heap
     def Print(self):
         for i in range(1, (self.size // 2) + 1):
@@ -130,6 +130,7 @@ class Heap:
 
         for pos in range(self.size // 2, 0, -1):
             self.max_heapify(pos)
+
     # Function to remove and return the minimum
     # element from the heap
     def remove(self):
@@ -145,6 +146,11 @@ class Heap:
             self.size -= 1
             self.max_heapify(self.FRONT)
             return popped
+    def find_pos(self, value):
+        for i in range(1, self.size):
+            if self.Heap[i] == value:
+                return i
+        return -1
 
 
 class HeapVisualizer:
@@ -167,6 +173,8 @@ class HeapVisualizer:
         pass
 
     def __delete_node(self):
+        print(self.heap.Heap)
+        self.heap.Print()
         pass
 
     def __set_is_min(self, *args):
