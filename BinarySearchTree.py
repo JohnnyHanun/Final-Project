@@ -29,9 +29,9 @@ theme = pygame_menu.Theme(
 class BSTNode(Node):
     def __init__(self, center: tuple[int, int], value: int, left: Node = None, right: Node = None, parent: Node = None,
                  all_nodes=None):
-        super().__init__(center, all_nodes, name=str(value))
-        self.height = 1
         self.value = value
+        super(BSTNode, self).__init__(center, all_nodes, name=str(value))
+        self.height = 1
         self.left: BSTNode = left
         self.right: BSTNode = right
         self.parent: BSTNode = parent
@@ -45,6 +45,9 @@ class BSTNode(Node):
 
     def __eq__(self, other):
         return self.value == other.value
+
+    def __deepcopy__(self, memodict):
+        return self
 
     def __hash__(self):
         return hash(self.value)
@@ -176,7 +179,7 @@ class BSTVisualizer:
                                            toggleswitch_id='AVL',
                                            onchange=self.__set_is_AVL, width=100)
         btn5.translate(-8, -440)
-        btn6 = self.menu.add.range_slider('', 15, (0, 200), 1,
+        btn6 = self.menu.add.range_slider('', 200-15, (0, 200), 1,
                                           font_color=BLACK_COLOR,
                                           background_color=WHITE_COLOR,
                                           width=200,
@@ -193,7 +196,9 @@ class BSTVisualizer:
         btn7.translate(0, -405)
 
     def __set_animation_speed(self, *args):
-        self.animation_speed = int(args[0] / 100 * 1000)
+
+        self.animation_speed = 2000 - int(args[0])*10#int(args[0] / 100 * 1000)
+        print(self.animation_speed)
         text_input: pygame_menu.widgets.widget.label.Label = self.menu.get_widget('speed_label')
         text_input.set_title('Animation Speed: ' + str(self.animation_speed))
 
@@ -276,27 +281,30 @@ class BSTVisualizer:
         if root is None:
             return root
         elif value < root.value:
-            bro.append(root)
+            bro.append(copy.deepcopy(root))
             root.left = self.__delete_node_avl_helper(root.left, value, bro)
         elif value > root.value:
             bro.append(root)
             root.right = self.__delete_node_avl_helper(root.right, value, bro)
         else:
             if root.left is None:
-                bro.append(copy.copy(root))
+                bro.append(copy.deepcopy(root))
                 temp = root.right
                 return temp
             elif root.right is None:
-                bro.append(copy.copy(root))
+                bro.append(copy.deepcopy(root))
                 temp = root.left
                 return temp
             temp = root.right
             while temp.left:
                 temp = temp.left
-            bro.append(copy.copy(root))
-            self.__swap_node(root, temp)
-            root.right = self.__delete_node_avl_helper(root.right,
-                                                       temp.value, bro)
+            bro.append(copy.deepcopy(root))
+            new_node = BSTNode(root.center,temp.value,root.left,root.right,root.parent)
+            new_node.right = self.__delete_node_avl_helper(root.right,
+                                                      temp.value, bro)
+            del root
+            root = new_node
+
         if root is None:
             return root
 
@@ -493,6 +501,7 @@ class BSTVisualizer:
         if root:
             self.__deleteTree(root.left)
             self.__deleteTree(root.right)
+            self.all_nodes.remove(root)
             del root
 
     def __fix_heights(self, root: BSTNode):
@@ -553,7 +562,7 @@ class BSTVisualizer:
                         else:
                             self.__fix_position(diff_parent,2*NODE_R)
                     diff_parent = self.__diff_parent(diff_parent)
-            self.all_nodes.empty()
+            self.all_nodes = pygame.sprite.Group()
             self.__draw_new_nodes(self.root)
             self.all_edges.empty()
             self.__draw_new_edges(self.root)
@@ -569,9 +578,9 @@ class BSTVisualizer:
         #         self.root = self.__add_node_helper(self.root, i)
 
     def __swap_node(self, src: BSTNode, dst: BSTNode):
-        src.value = dst.value
-        src.name = dst.name
-        self.all_values[src.value] = src
+        pass
+
+
 
         ################################
         # don't forget to delete edges #
@@ -611,33 +620,36 @@ class BSTVisualizer:
         self.__fix_position_subtree(root.left)
         self.__fix_position_subtree(root.right)
 
-    def __delete_node_helper(self, node: BSTNode, value: int, bro: list[BSTNode]):
-        if node is None:
+    def __delete_node_helper(self, root: BSTNode, value: int, bro: list[BSTNode]):
+        if root is None:
             return None
-        if value < node.value:
-            bro.append(node)
-            node.left = self.__delete_node_helper(node.left, value, bro)
-            if node.left is not None:
-                node.left.parent = node
-        elif value > node.value:
-            bro.append(node)
-            node.right = self.__delete_node_helper(node.right, value, bro)
-            if node.right is not None:
-                node.right.parent = node
+        if value < root.value:
+            bro.append(copy.deepcopy(root))
+            root.left = self.__delete_node_helper(root.left, value, bro)
+            if root.left is not None:
+                root.left.parent = root
+        elif value > root.value:
+            bro.append(copy.deepcopy(root))
+            root.right = self.__delete_node_helper(root.right, value, bro)
+            if root.right is not None:
+                root.right.parent = root
         else:
-            if node.left is None:
-                bro.append(copy.copy(node))
-                return node.right
-            elif node.right is None:
-                bro.append(copy.copy(node))
-                return node.left
-            temp = node.right
+            if root.left is None:
+                bro.append(copy.deepcopy(root))
+                return root.right
+            elif root.right is None:
+                bro.append(copy.deepcopy(root))
+                return root.left
+            temp = root.right
             while temp.left:
                 temp = temp.left
-            bro.append(copy.copy(node))
-            self.__swap_node(node, temp)
-            node.right = self.__delete_node_helper(node.right, temp.value, bro)
-        return node
+            bro.append(copy.deepcopy(root))
+            new_node = BSTNode(root.center,temp.value,root.left,root.right,root.parent)
+            new_node.right = self.__delete_node_avl_helper(root.right,
+                                                      temp.value, bro)
+            del root
+            root = new_node
+        return root
 
     def __draw_new_edges(self, root: BSTNode):
         if root is None:
@@ -694,7 +706,6 @@ class BSTVisualizer:
         pygame.time.delay(sec)
         last_node.paint_node(RED)
         self.__refresh_screen(pygame.event.get())
-        self.__refresh_screen(pygame.event.get())
         pygame.time.delay(sec)
 
     def __delete_node(self):
@@ -715,10 +726,9 @@ class BSTVisualizer:
             temp = self.root
             self.root = None
             self.__fix_positions_avl_tree(temp)
-            self.__deleteTree(temp)
-            self.all_nodes = pygame.sprite.Group()
+            self.all_nodes.empty()
+            self.all_edges.empty()
             self.__draw_new_nodes(self.root)
-            self.all_edges = pygame.sprite.Group()
             self.__draw_new_edges(self.root)
             # if self.root is not None:
             #     self.__fix_position_subtree(self.root.left)
