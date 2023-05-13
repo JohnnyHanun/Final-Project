@@ -744,7 +744,6 @@ class BSTVisualizer:
         root.paint_node(ORANGE)
         self.__refresh_screen([])
         pygame.time.delay(self.animation_speed)
-        print(root.value, f'parent = {str(root.parent)}, {root.height}')
         self.__Inorder(root.right)
 
     def __Preorder(self, root: BSTNode):
@@ -753,7 +752,6 @@ class BSTVisualizer:
         root.paint_node(ORANGE)
         self.__refresh_screen([])
         pygame.time.delay(self.animation_speed)
-        print(root.value)
         self.__Preorder(root.left)
         self.__Preorder(root.right)
 
@@ -765,7 +763,6 @@ class BSTVisualizer:
         root.paint_node(ORANGE)
         self.__refresh_screen([])
         pygame.time.delay(self.animation_speed)
-        print(root.value)
 
     def __refresh_screen(self, events):
         self.menu.update(events)
