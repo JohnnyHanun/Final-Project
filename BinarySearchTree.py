@@ -38,13 +38,13 @@ class BSTNode(Node):
         self.is_right_son = False
 
     def __lt__(self, other):
-        return self.value < other.value
+        return self.value < other if isinstance(other,int) else self.value < other.value
 
     def __gt__(self, other):
-        return self.value > other.value
+        return self.value > other if isinstance(other,int) else self.value > other.value
 
     def __eq__(self, other):
-        return self.value == other.value
+        return self.value == other if isinstance(other,int) else self.value == other.value
 
     def __deepcopy__(self, memodict):
         return self
@@ -92,17 +92,26 @@ class BSTVisualizer:
                 w.set_background_color(SPECIAL_BLUE)
             else:
                 w.set_background_color((0, 204, 0))
-
         def traversal_activation():
+            def traversal_shower(which_traversal, result):
+                self.__traversal_shower.set_title(which_traversal)
+                self.__traversal_shower.get_widget('traversal_shower').set_title(' '.join(result))
+                self.__traversal_shower.enable()
+                while self.__traversal_shower.is_enabled():
+                    self.__traversal_shower.mainloop(self.window_surface, disable_loop=False)
             w: pygame_menu.widgets.widget.dropselect.DropSelect = self.menu.get_widget('dropselect')
             try:
                 val = w.get_value()
+                traversal, result = None, None
                 if val[0][0] == 'Inorder':
-                    self.__Inorder(root=self.root)
+                    traversal, result = 'Inorder', self.__Inorder(root=self.root,result=[])
                 elif val[0][0] == 'PreOrder':
-                    self.__Preorder(root=self.root)
+                    traversal, result = 'PreOrder', self.__Preorder(root=self.root,result=[])
                 elif val[0][0] == 'PostOrder':
-                    self.__Postorder(root=self.root)
+                    traversal, result = 'PostOrder', self.__Postorder(root=self.root,result=[])
+                if traversal and result:
+                    traversal_shower(traversal,result)
+
                 for node in self.all_nodes:
                     node.clicked_off()
 
@@ -194,13 +203,26 @@ class BSTVisualizer:
                                    font_size=20, font_color=BLACK_COLOR, label_id='speed_label')
         btn6.translate(0, -400)
         btn7.translate(0, -405)
+        self.__traversal_shower = pygame_menu.Menu('', 450, 200, theme=theme,
+                                          mouse_motion_selection=True, center_content=False)
+        self.__traversal_shower.add.label('', font_size=25, font_color=BLACK_COLOR,label_id='traversal_shower')
+
+        def error():
+            self.__traversal_shower.disable()
+            self.menu.enable()
+
+        go_back = self.__traversal_shower.add.button('OK', error, border_color=ORANGE, font_color=BLACK_COLOR,
+                                            font_size=30,
+                                            button_id='ok',
+                                            background_color=(0, 204, 0), cursor=pygame_menu.locals.CURSOR_HAND)
+        go_back.set_onmouseover(button_onmouseover)
+        go_back.set_onmouseleave(button_onmouseleave)
 
     def __set_animation_speed(self, *args):
 
         self.animation_speed = 2000 - int(args[0])*10#int(args[0] / 100 * 1000)
-        print(self.animation_speed)
         text_input: pygame_menu.widgets.widget.label.Label = self.menu.get_widget('speed_label')
-        text_input.set_title('Animation Speed: ' + str(self.animation_speed))
+        text_input.set_title('Animation Speed: ' + str(2000 - self.animation_speed))
 
     def __set_is_AVL(self, *args):
         self.is_AVL = args[0]
@@ -450,15 +472,20 @@ class BSTVisualizer:
             return
         sec = self.animation_speed
         edge_last_node: Edge = self.__find_edge(last_node.parent, last_node)
-        self.all_nodes.remove(last_node)
-        self.all_edges.remove(edge_last_node)
+        if last_node.draw:
+            self.all_nodes.remove(last_node)
+            self.all_edges.remove(edge_last_node)
         self.__refresh_screen(pygame.event.get())
         for node in bro:
+            if not node.draw:
+                continue
             node.clicked_on(TARGET)
             self.__refresh_screen(pygame.event.get())
             pygame.time.delay(sec)
-        self.all_edges.add(edge_last_node)
-        last_node.paint_node(TARGET)
+        if edge_last_node and edge_last_node.draw:
+            self.all_edges.add(edge_last_node)
+        if last_node.draw:
+            last_node.paint_node(TARGET)
         self.__refresh_screen(pygame.event.get())
         pygame.time.delay(sec)
         self.all_nodes.add(last_node)
@@ -466,6 +493,8 @@ class BSTVisualizer:
         pygame.time.delay(sec)
         bro.append(last_node)
         for node in bro:
+            if not node.draw:
+                continue
             node.clicked_off()
 
     def __find_node(self, root: BSTNode, value: int):
@@ -643,7 +672,6 @@ class BSTVisualizer:
             temp = root.right
             while temp.left:
                 temp = temp.left
-            bro.append(copy.deepcopy(root))
             new_node = BSTNode(root.center,temp.value,root.left,root.right,root.parent)
             new_node.right = self.__delete_node_avl_helper(root.right,
                                                       temp.value, bro)
@@ -654,7 +682,7 @@ class BSTVisualizer:
     def __draw_new_edges(self, root: BSTNode):
         if root is None:
             return
-        if root.parent is not None and root in self.all_nodes:
+        if root.parent is not None and root in self.all_nodes and root.draw:
             start, _ = self.__calc_position(root.center, root.parent.center)
             end, _ = self.__calc_position(root.parent.center, root.center)
             e = Edge(root.parent, root, start_point=start, end_point=end, is_weighted=False,
@@ -668,8 +696,9 @@ class BSTVisualizer:
             return
         root.clicked_off()
         X, Y = root.center
-        if self.menu.get_position()[0] - NODE_R > X > 0 + NODE_R and Y < SCREEN_SIZE[1]:
-            self.all_nodes.add(root)
+        self.all_nodes.add(root)
+        if not (self.menu.get_position()[0] - NODE_R > X > 0 + NODE_R and Y < SCREEN_SIZE[1]):#or root.parent is not None and not root.parent.draw:
+            root.hide_node()
         self.__draw_new_nodes(root.left)
         self.__draw_new_nodes(root.right)
 
@@ -689,6 +718,8 @@ class BSTVisualizer:
 
     def __delete_animation(self, bro: list[BSTNode]):
         last_node: BSTNode = bro.pop(-1)
+        if not last_node.draw:
+            return
         sec = self.animation_speed
         if last_node.parent is None:
             last_node.paint_node(RED)
@@ -737,32 +768,38 @@ class BSTVisualizer:
             # if answer:
             #     self.__avoid_collision(self.root)
 
-    def __Inorder(self, root: BSTNode):
+    def __Inorder(self, root: BSTNode, result: list[str]):
         if root is None:
-            return
-        self.__Inorder(root.left)
+            return result
+        self.__Inorder(root.left,result)
+        result.append(str(root))
         root.paint_node(ORANGE)
         self.__refresh_screen([])
         pygame.time.delay(self.animation_speed)
-        self.__Inorder(root.right)
+        self.__Inorder(root.right,result)
+        return result
 
-    def __Preorder(self, root: BSTNode):
+    def __Preorder(self, root: BSTNode, result: list[str]):
         if root is None:
-            return
+            return result
+        result.append(str(root))
         root.paint_node(ORANGE)
         self.__refresh_screen([])
         pygame.time.delay(self.animation_speed)
-        self.__Preorder(root.left)
-        self.__Preorder(root.right)
+        self.__Preorder(root.left,result)
+        self.__Preorder(root.right, result)
+        return result
 
-    def __Postorder(self, root: BSTNode):
+    def __Postorder(self, root: BSTNode, result: list[str]):
         if root is None:
-            return
-        self.__Postorder(root.left)
-        self.__Postorder(root.right)
+            return result
+        self.__Postorder(root.left,result)
+        self.__Postorder(root.right,result)
+        result.append(str(root))
         root.paint_node(ORANGE)
         self.__refresh_screen([])
         pygame.time.delay(self.animation_speed)
+        return result
 
     def __refresh_screen(self, events):
         self.menu.update(events)

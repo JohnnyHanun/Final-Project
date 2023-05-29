@@ -5,6 +5,7 @@ import heapq
 import time
 import pygame
 import pygame_gui
+import numpy as np
 
 from constants import *
 from pygame.locals import (
@@ -29,8 +30,9 @@ class Node(pygame.sprite.Sprite):
         self.name = "" if not draw else name
         self.text_view = pygame.font.SysFont("arial", 22, True, False).render("" if not draw else self.name, True,
                                                                               (255, 255, 255))
+        self.draw = draw
         self.is_clicked = False
-        if draw:
+        if self.draw:
             pygame.draw.circle(self.surf, 'Green', (NODE_R, NODE_R), NODE_R)
         self.surf.set_colorkey((0, 0, 0), RLEACCEL)
         self.rect = self.surf.get_rect(center=self.center)
@@ -80,7 +82,16 @@ class Node(pygame.sprite.Sprite):
         pygame.draw.circle(self.surf, color, (NODE_R, NODE_R), NODE_R)
         self.surf.set_colorkey((0, 0, 0), RLEACCEL)
         self.rect = self.surf.get_rect(center=self.center)
-        self.surf.blit(self.text_view, (20, 20))
+        self.text_view = pygame.font.SysFont("arial", 22, True, False).render(self.name, True,
+                                                                              (255, 255, 255))
+        self.surf.blit(self.text_view, self.text_view.get_rect(center=self.surf.get_rect().center))
+
+    def hide_node(self):
+        self.surf.fill(pygame.Color('Black'))
+        self.rect = self.surf.get_rect(center=self.center)
+        self.image = self.surf
+        self.draw = False
+
 
 
 class Edge(pygame.sprite.Sprite):
@@ -248,6 +259,8 @@ class Edge(pygame.sprite.Sprite):
 
 class Graph_Simulator:
     def __init__(self, file_name: str = "", menu=None, is_directed=True, is_weighted=True):
+        self.stable = True
+        self.GMatrix = None
         pygame.init()
         pygame.display.set_caption('Graph Visualizer')
         self.graph: dict[Node, dict[Node, Edge]] = {}
@@ -354,7 +367,9 @@ class Graph_Simulator:
         return edge_dict.get(destination)
 
     def __edit_weight(self):
+        self.stable = False
         if not self.is_weighted:
+            self.stable = True
             return
         src: Node = None
         dst: Node = None
@@ -382,6 +397,7 @@ class Graph_Simulator:
         if not edge:
             src.clicked_off()
             dst.clicked_off()
+            self.stable = True
             return
         weight = 0
         if self.is_directed:
@@ -407,37 +423,92 @@ class Graph_Simulator:
             src.clicked_off()
             dst.clicked_off()
         self.__refresh_screen()
+        self.stable = True
 
     def __stabling_graph(self):
-        return
-        L0 = 250  # nominal distance in pixles
+        # L0 = 250  # nominal distance in pixles
         K1, K2 = 10, 1  # force/distance
-        V = 3  # pixel/frem
+        forget_factor = 0.9
+        V = 6  # pixel/frame
         TOL = 5
+        epsilon = 1e-8
+        eta = 25
+        x, y = SCREEN_SIZE
+        sp: Node = Node((x // 2, y // 2), all_nodes=None, draw=False)
+        dic = {}
+        sum_sqr_f = 0
+        if self.GMatrix is None or self.GMatrix.shape[0] != len(self.all_nodes) * 2 or self.GMatrix.shape[1] != len(
+                self.all_nodes) * 2:
+            self.GMatrix = np.zeros((len(self.all_nodes) * 2, len(self.all_nodes) * 2))
+
         for v in self.all_nodes:
             fx, fy = 0, 0
             for u in self.all_nodes:
                 if v == u:
-                    continue
-                dx = u.center[0] - v.center[0]
-                dy = u.center[1] - v.center[1]
+                    L0 = 1e-10
+                    dx = sp.center[0] - v.center[0]
+                    dy = sp.center[1] - v.center[1]
+                else:
+                    L0 = 250
+                    dx = u.center[0] - v.center[0]
+                    dy = u.center[1] - v.center[1]
                 dist = math.sqrt((dx ** 2) + (dy ** 2)) + 1e-10
-                my_k = K1 if self.__is_an_edge(self.graph[u], v) else K2
-                if dist > L0 + TOL:
-                    fx += my_k * (dx / dist)
-                    fy += my_k * (dy / dist)
-                elif dist < L0 - TOL:
-                    fx -= my_k * (dx / dist)
-                    fy -= my_k * (dy / dist)
-            norm_f = math.sqrt((fx ** 2) + (fy ** 2)) + 1e-10
-            fx /= norm_f
-            fy /= norm_f
-            new_x = v.center[0] + (fx * V)
-            new_y = v.center[1] + (fy * V)
-            new_x = max(50, min(1024 - 50, new_x))
-            new_y = max(50, min(900 - 50, new_y))
+                my_k = K1 if self.__is_an_edge(self.graph[u], v) or self.__is_an_edge(self.graph[v], u) else K2
+                a = dist - L0  # max(min((dist - L0) / TOL, 1), -1)
+                fx += my_k * (dx / dist) * a
+                fy += my_k * (dy / dist) * a
+            dic[v] = (fx, fy)
+            sum_sqr_f += fx ** 2 + fy ** 2
+        f = []
+        for (v, (fx, fy)) in dic.items():
+            f += [fx, fy]
+        f = np.array(f)
+        self.GMatrix += np.outer(f, f)
+        newF = f / np.sqrt(np.diag(self.GMatrix) + epsilon)
+        newDic = {}
+        for i, v in enumerate(self.all_nodes):
+            newDic[v] = (newF[2 * i], newF[2 * i + 1])
+        # print(sum_sqr_f, [(dic[v][0]**2+dic[v][1]**2,str(v))  for v in dic])
+        for v in self.all_nodes:
+            fx, fy = newDic[v]
+            new_x = v.center[0] + (fx * eta)
+            new_y = v.center[1] + (fy * eta)
+            new_x = max(50, min(x - 50, new_x))
+            new_y = max(50, min(y - 50, new_y))
+            old_x, old_y = v.center
+            # v.center = (
+            # old_x * forget_factor + new_x * (1 - forget_factor), old_y * forget_factor + new_y * (1 - forget_factor))
             v.center = (new_x, new_y)
             v.rect = v.surf.get_rect(center=v.center)
+            self.__move_node(v)
+        # L0 = 250  # nominal distance in pixles
+        # K1, K2 = 10, 1  # force/distance
+        # V = 3  # pixel/frem
+        # TOL = 5
+        # for v in self.all_nodes:
+        #     fx, fy = 0, 0
+        #     for u in self.all_nodes:
+        #         if v == u:
+        #             continue
+        #         dx = u.center[0] - v.center[0]
+        #         dy = u.center[1] - v.center[1]
+        #         dist = math.sqrt((dx ** 2) + (dy ** 2)) + 1e-10
+        #         my_k = K1 if self.__is_an_edge(self.graph[u], v) else K2
+        #         if dist > L0 + TOL:
+        #             fx += my_k * (dx / dist)
+        #             fy += my_k * (dy / dist)
+        #         elif dist < L0 - TOL:
+        #             fx -= my_k * (dx / dist)
+        #             fy -= my_k * (dy / dist)
+        #     norm_f = math.sqrt((fx ** 2) + (fy ** 2)) + 1e-10
+        #     fx /= norm_f
+        #     fy /= norm_f
+        #     new_x = v.center[0] + (fx * V)
+        #     new_y = v.center[1] + (fy * V)
+        #     new_x = max(50, min(1024 - 50, new_x))
+        #     new_y = max(50, min(900 - 50, new_y))
+        #     v.center = (new_x, new_y)
+        #     v.rect = v.surf.get_rect(center=v.center)
 
     def __is_in_node(self, position: tuple[int, int]):
         tmp_node = Node(position, None, False)
@@ -621,7 +692,8 @@ class Graph_Simulator:
         # self.window_surface.blit(txt_surface, (0,0))
         self.clock.tick(144)
         self.all_graph.clear(self.window_surface, self.window_surface.copy())
-        self.__stabling_graph()
+        if self.stable:
+            self.__stabling_graph()
         self.window_surface.fill(BLACK_COLOR)
         self.all_graph.draw(self.window_surface)
         pygame.display.update()
@@ -765,6 +837,7 @@ class Graph_Simulator:
         self.__refresh_screen()
 
     def __DFS(self):
+        self.stable = False
         pygame.event.pump()
         sec = 1000
         src = self.__algo_choose_nodes(flag=True)
@@ -789,6 +862,7 @@ class Graph_Simulator:
         self.__clean_data_for_algos()
 
     def __Dijkstra(self):
+        self.stable = False
         pygame.event.pump()
         sec = 1000
         src, dst = self.__algo_choose_nodes()
@@ -816,6 +890,7 @@ class Graph_Simulator:
             heapq.heapify(heap)
         if not dst.algo_node:
             self.__clean_data_for_algos()
+            self.stable = True
             return
         for node in self.graph:
             node.clicked_off()
@@ -833,8 +908,10 @@ class Graph_Simulator:
         edges_to_print = []
         self.__fill_list_with_edges(print_queue, edges_to_print)
         self.__perform_animation(edges_to_print, sec, src, dst)
+        self.stable = True
 
     def __MST_KRUSKAL(self):
+        self.stable = False
         pygame.event.pump()
         sec = 1000
 
@@ -914,6 +991,7 @@ class Graph_Simulator:
             edge.color = WHITE_COLOR
             edge.draw()
         self.__refresh_screen()
+        self.stable = True
 
     def __reverse_graph(self):
         reversed_graph: dict[Node, dict[Node, Edge]] = {}
@@ -930,6 +1008,7 @@ class Graph_Simulator:
         return reversed_graph, all_graph_reversed
 
     def __Kosaraju_Sharir(self):
+        self.stable = False
         pygame.event.pump()
         sec = 1000
         # lst_to_shuffle = [(key, key.deg_in + key.deg_out) for key in self.graph.keys()]
@@ -991,8 +1070,10 @@ class Graph_Simulator:
         self.__refresh_screen()
         pygame.time.delay(5 * sec)
         self.__clean_data_for_algos()
+        self.stable = True
 
     def __BFS(self):
+        self.stable = False
         pygame.event.pump()
         queue = []
         sec = 1000
@@ -1040,6 +1121,7 @@ class Graph_Simulator:
         edges_to_print = []
         self.__fill_list_with_edges(print_queue, edges_to_print)
         self.__perform_animation(edges_to_print, sec, src, dst)
+        self.stable = True
 
     def __clicked_off(self, delete_edge_queue):
         for nd in delete_edge_queue:
@@ -1062,7 +1144,8 @@ class Graph_Simulator:
                         self.menu.enable()
                         return
                 key_pressed = pygame.key.get_pressed()
-
+                if event.type == pygame.KEYDOWN and key_pressed[pygame.K_p]:
+                    self.stable = not self.stable
                 if event.type == pygame.KEYDOWN and key_pressed[pygame.K_b]:
                     self.__BFS()
                 if event.type == pygame.KEYDOWN and key_pressed[pygame.K_m]:

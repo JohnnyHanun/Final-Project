@@ -6,6 +6,7 @@ LEFT_MOUSE: int = 1
 RIGHT_CLICK: int = 3
 Utils: Utils = Utils()
 SCREEN_SIZE = (1200, 847)  # width ,height
+#SCREEN_SIZE = (2000,1300)
 TARGET = (204, 0, 102)
 MID_POS_TREE = ((SCREEN_SIZE[0] - 300) / 2, NODE_R+NODE_R/2)
 RIGHT_ENTER_KEY = 1073741912
