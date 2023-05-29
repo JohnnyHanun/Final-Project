@@ -9,6 +9,7 @@ from Graph import Graph_Simulator
 from typing import Optional
 from StackVisualizer import StackVisualizer
 from BinarySearchTree import BSTVisualizer
+from Heap import HeapVisualizer
 from constants import *
 import subprocess
 import sys
@@ -109,6 +110,13 @@ def BST_init():
     main_menu.full_reset()
     main_menu.enable()
 
+def heap_init():
+    global main_menu
+    HeapVisualizer(main_menu=main_menu).run()
+    main_menu.disable()
+    main_menu.full_reset()
+    main_menu.enable()
+
 def main_background() -> None:
     """
     Function used by menus, draw on background while menu is active.
@@ -176,6 +184,7 @@ def main(test: bool = False) -> None:
     main_menu.add.button('Graph', graph_menu)
     main_menu.add.button('Stack', stack_init)
     main_menu.add.button('Binary Search Tree', BST_init)
+    main_menu.add.button('Heap', heap_init)
     main_menu.add.button('Quit', pygame_menu.events.EXIT)
 
     # -------------------------------------------------------------------------
