@@ -175,7 +175,7 @@ class StackVisualizer:
                                           value_format=lambda x: str(int(x)))
 
         btn6.set_onchange(self.__set_animation_speed)
-        btn7 = self.menu.add.label('Animation Speed: ' + str(self.animation_speed),
+        btn7 = self.menu.add.label('Animation Speed: ' + str(2000 - self.animation_speed),
                                    font_size=20, font_color=BLACK_COLOR, label_id='speed_label')
         btn6.translate(0, -400)
         btn7.translate(0, -405)
