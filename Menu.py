@@ -23,6 +23,7 @@ FPS = 60
 is_weighted_graph = [True]
 clock: Optional['pygame.time.Clock'] = None
 main_menu: Optional['pygame_menu.Menu'] = None
+graph_menu: Optional['pygame_menu.Menu'] = None
 surface: Optional['pygame.Surface'] = None
 if sys.platform == "win32":
     command = r'reg query "HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\User Shell Folders" ' \
@@ -61,14 +62,14 @@ def file_name_init(is_weighted_graph: list, font: 'pygame.font.Font') -> None:
                 if event.ui_element == file_dialog:
                     Graph_Simulator(file_name=event.text, menu=main_menu).run()
                     main_menu.disable()
-                    main_menu.full_reset()
+                    # main_menu.full_reset()
                     main_menu.enable()
                     return
 
             if event.type == pygame_gui.UI_WINDOW_CLOSE:
                 if event.ui_element == file_dialog:
-                    main_menu.disable()
-                    main_menu.full_reset()
+                    # main_menu.disable()
+                    # main_menu.full_reset()
                     main_menu.enable()
                     return
             manager.process_events(event)
@@ -82,8 +83,6 @@ def directed_graph_init(is_weighted_graph: list, font: 'pygame.font.Font') -> No
     # Define globals
     global main_menu
     Graph_Simulator(menu=main_menu,is_directed=True, is_weighted=is_weighted_graph[-1]).run()
-    main_menu.disable()
-    main_menu.full_reset()
     main_menu.enable()
 
 
@@ -91,8 +90,6 @@ def undirected_graph_init(is_weighted_graph: list, font: 'pygame.font.Font',) ->
     # Define globals
     global main_menu
     Graph_Simulator(menu=main_menu, is_directed=False, is_weighted=is_weighted_graph[-1]).run()
-    main_menu.disable()
-    main_menu.full_reset()
     main_menu.enable()
 
 
@@ -140,6 +137,7 @@ def main(test: bool = False) -> None:
     global surface
     global is_weighted_graph
     global file_name
+    global graph_menu
 
     # -------------------------------------------------------------------------
     # Create window
@@ -167,7 +165,7 @@ def main(test: bool = False) -> None:
     graph_menu.add.button('Undirected Graph', undirected_graph_init, is_weighted_graph,
                           pygame.font.Font(pygame_menu.font.FONT_FRANCHISE, 30))
 
-    graph_menu.add.button('Return to main menu', pygame_menu.events.BACK)
+    graph_menu.add.button('Return to main menu', pygame_menu.events.BACK, button_id='back')
 
     # -------------------------------------------------------------------------
     # Create menus: Main
@@ -180,7 +178,6 @@ def main(test: bool = False) -> None:
         title='Main Menu',
         width=SCREEN_SIZE[0] * 0.6
     )
-
     main_menu.add.button('Graph', graph_menu)
     main_menu.add.button('Stack', stack_init)
     main_menu.add.button('Binary Search Tree', BST_init)
@@ -203,12 +200,17 @@ def main(test: bool = False) -> None:
         for event in events:
             if event.type == pygame.QUIT:
                 exit()
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_ESCAPE:
+                    graph_menu.get_widget('back').apply()
+
 
         # Main menu
         if main_menu.is_enabled():
-            main_menu.mainloop(surface, main_background, disable_loop=test, fps_limit=FPS)
+            main_menu.mainloop(surface, main_background, disable_loop=True, fps_limit=FPS)
 
         # Flip surface
+        main_menu.update(events)
         pygame.display.flip()
 
 
