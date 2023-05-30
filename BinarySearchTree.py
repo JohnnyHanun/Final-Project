@@ -38,13 +38,13 @@ class BSTNode(Node):
         self.is_right_son = False
 
     def __lt__(self, other):
-        return self.value < other if isinstance(other,int) else self.value < other.value
+        return self.value < other if isinstance(other, int) else self.value < other.value
 
     def __gt__(self, other):
-        return self.value > other if isinstance(other,int) else self.value > other.value
+        return self.value > other if isinstance(other, int) else self.value > other.value
 
     def __eq__(self, other):
-        return self.value == other if isinstance(other,int) else self.value == other.value
+        return self.value == other if isinstance(other, int) else self.value == other.value
 
     def __deepcopy__(self, memodict):
         return self
@@ -54,7 +54,7 @@ class BSTNode(Node):
 
 
 class BSTVisualizer:
-    def __init__(self,main_menu):
+    def __init__(self, main_menu):
         pygame.init()
         pygame.display.set_caption('BST Visualizer')
         self.main_menu = main_menu
@@ -66,6 +66,9 @@ class BSTVisualizer:
         self.all_values: dict[int, BSTNode] = {}
         self.is_AVL = True
         self.animation_speed = 150
+        self.__error_message = None
+        self.__traversal_shower = None
+        self.__error_traversal = None
         self.__setup_menu()
 
     def __setup_menu(self):
@@ -92,31 +95,6 @@ class BSTVisualizer:
                 w.set_background_color(SPECIAL_BLUE)
             else:
                 w.set_background_color((0, 204, 0))
-        def traversal_activation():
-            def traversal_shower(which_traversal, result):
-                self.__traversal_shower.set_title(which_traversal)
-                self.__traversal_shower.get_widget('traversal_shower').set_title(' '.join(result))
-                self.__traversal_shower.enable()
-                while self.__traversal_shower.is_enabled():
-                    self.__traversal_shower.mainloop(self.window_surface, disable_loop=False)
-            w: pygame_menu.widgets.widget.dropselect.DropSelect = self.menu.get_widget('dropselect')
-            try:
-                val = w.get_value()
-                traversal, result = None, None
-                if val[0][0] == 'Inorder':
-                    traversal, result = 'Inorder', self.__Inorder(root=self.root,result=[])
-                elif val[0][0] == 'PreOrder':
-                    traversal, result = 'PreOrder', self.__Preorder(root=self.root,result=[])
-                elif val[0][0] == 'PostOrder':
-                    traversal, result = 'PostOrder', self.__Postorder(root=self.root,result=[])
-                if traversal and result:
-                    traversal_shower(traversal,result)
-
-                for node in self.all_nodes:
-                    node.clicked_off()
-
-            except Exception:
-                pass
 
         self.menu = pygame_menu.Menu("BST Menu", 300, 847, theme=theme, position=(100, 0))
         btn4 = self.menu.add.text_input(
@@ -167,7 +145,7 @@ class BSTVisualizer:
             shadow_width=20
         )
         btn2.translate(0, 25 + 50)
-        btn3 = self.menu.add.button("Activate Traversal", traversal_activation, border_color=WHITE_COLOR,
+        btn3 = self.menu.add.button("Activate Traversal", self.__traversal_activation, border_color=WHITE_COLOR,
                                     font_color=BLACK_COLOR,
                                     font_size=30,
                                     button_id='Traversal',
@@ -188,7 +166,7 @@ class BSTVisualizer:
                                            toggleswitch_id='AVL',
                                            onchange=self.__set_is_AVL, width=100)
         btn5.translate(-8, -440)
-        btn6 = self.menu.add.range_slider('', 200-15, (0, 200), 1,
+        btn6 = self.menu.add.range_slider('', 200 - 15, (0, 200), 1,
                                           font_color=BLACK_COLOR,
                                           background_color=WHITE_COLOR,
                                           width=200,
@@ -203,32 +181,69 @@ class BSTVisualizer:
                                    font_size=20, font_color=BLACK_COLOR, label_id='speed_label')
         btn6.translate(0, -400)
         btn7.translate(0, -405)
-        self.__traversal_shower = pygame_menu.Menu('', 450, 200, theme=theme,
-                                          mouse_motion_selection=True, center_content=False)
-        self.__traversal_shower.add.label('', font_size=25, font_color=BLACK_COLOR,label_id='traversal_shower')
+        self.__error_message = pygame_menu.Menu('Error!', 550, 200, theme=theme,
+                                                mouse_motion_selection=True, center_content=False)
+        self.__error_message.add.label('The Tree Is Empty', font_size=25, font_color=BLACK_COLOR,label_id='error_message')
+
+        self.__traversal_shower = pygame_menu.Menu('', 550, 200, theme=theme,
+                                                   mouse_motion_selection=True, center_content=False)
+        self.__traversal_shower.add.label('', font_size=25, font_color=BLACK_COLOR, label_id='traversal_shower')
+        self.__error_traversal = pygame_menu.Menu('Error!', 550, 200, theme=theme,
+                                                  mouse_motion_selection=True, center_content=False)
+        self.__error_traversal.add.label('You Must Select An Option', font_size=25, font_color=BLACK_COLOR)
 
         def error():
+            self.__error_message.disable()
+            self.menu.enable()
+
+        def traversal_shower_manu():
             self.__traversal_shower.disable()
             self.menu.enable()
 
-        go_back = self.__traversal_shower.add.button('OK', error, border_color=ORANGE, font_color=BLACK_COLOR,
-                                            font_size=30,
-                                            button_id='ok',
-                                            background_color=(0, 204, 0), cursor=pygame_menu.locals.CURSOR_HAND)
+        def traversal_shower_error():
+            self.__error_traversal.disable()
+            self.menu.enable()
+
+        go_back = self.__error_message.add.button('OK', error, border_color=ORANGE, font_color=BLACK_COLOR,
+                                                  font_size=30,
+                                                  button_id='ok',
+                                                  background_color=(0, 204, 0), cursor=pygame_menu.locals.CURSOR_HAND)
         go_back.set_onmouseover(button_onmouseover)
         go_back.set_onmouseleave(button_onmouseleave)
 
+        go_back1 = self.__traversal_shower.add.button('OK', traversal_shower_manu, border_color=ORANGE, font_color=BLACK_COLOR,
+                                                      font_size=30,
+                                                      button_id='ok',
+                                                      background_color=(0, 204, 0),
+                                                      cursor=pygame_menu.locals.CURSOR_HAND)
+        go_back1.set_onmouseover(button_onmouseover)
+        go_back1.set_onmouseleave(button_onmouseleave)
+
+        go_back2 = self.__error_traversal.add.button('OK', traversal_shower_error, border_color=ORANGE, font_color=BLACK_COLOR,
+                                                     font_size=30,
+                                                     button_id='ok',
+                                                     background_color=(0, 204, 0),
+                                                     cursor=pygame_menu.locals.CURSOR_HAND)
+        go_back2.set_onmouseover(button_onmouseover)
+        go_back2.set_onmouseleave(button_onmouseleave)
+
     def __set_animation_speed(self, *args):
 
-        self.animation_speed = 2000 - int(args[0])*10#int(args[0] / 100 * 1000)
+        self.animation_speed = 2000 - int(args[0]) * 10  # int(args[0] / 100 * 1000)
         text_input: pygame_menu.widgets.widget.label.Label = self.menu.get_widget('speed_label')
         text_input.set_title('Animation Speed: ' + str(2000 - self.animation_speed))
 
     def __set_is_AVL(self, *args):
         self.is_AVL = args[0]
-        self.menu.get_widget('ClearTree').apply()
+        self.menu.get_widget('ClearTree').apply(False)
 
-    def __clear_tree(self):
+    def __clear_tree(self, show_error=True):
+        if self.root is None and show_error:
+            self.__error_message.enable()
+            self.__error_message.get_widget('error_message').set_title('The Tree Is Empty')
+            while self.__error_message.is_enabled():
+                self.__error_message.mainloop(self.window_surface, disable_loop=False)
+            return
         self.all_values = {}
         self.all_nodes.empty()
         self.all_edges.empty()
@@ -321,9 +336,9 @@ class BSTVisualizer:
             while temp.left:
                 temp = temp.left
             bro.append(copy.deepcopy(root))
-            new_node = BSTNode(root.center,temp.value,root.left,root.right,root.parent)
+            new_node = BSTNode(root.center, temp.value, root.left, root.right, root.parent)
             new_node.right = self.__delete_node_avl_helper(root.right,
-                                                      temp.value, bro)
+                                                           temp.value, bro)
             del root
             root = new_node
 
@@ -536,7 +551,7 @@ class BSTVisualizer:
     def __fix_heights(self, root: BSTNode):
         if root is None:
             return
-        root.height = 1 + max(self.__getHeight(root.left),self.__getHeight(root.right))
+        root.height = 1 + max(self.__getHeight(root.left), self.__getHeight(root.right))
         self.__fix_heights(root.left)
         self.__fix_heights(root.right)
 
@@ -560,12 +575,26 @@ class BSTVisualizer:
     def __add_node(self):
         text_input: pygame_menu.widgets.widget.textinput.TextInput = self.menu.get_widget('text_input')
         value = text_input.get_value()
+        if not text_input.get_value().isnumeric():
+            self.__error_message.enable()
+            e: pygame_menu.widgets.widget.label.Label = self.__error_message.get_widget('error_message')
+            e.set_title('Value must be an integer')
+            while self.__error_message.is_enabled():
+                self.__error_message.mainloop(self.window_surface, disable_loop=False)
+            text_input.clear()
+            return
         try:
             value = int(value)
         except ValueError:
             text_input.clear()
             return
         if value > 9999 or value < -9999:
+            self.__error_message.enable()
+            e: pygame_menu.widgets.widget.label.Label = self.__error_message.get_widget('error_message')
+            e.set_title('Value must be between -9999 to 9999')
+            while self.__error_message.is_enabled():
+                self.__error_message.mainloop(self.window_surface, disable_loop=False)
+            text_input.clear()
             return
         text_input.clear()
         if not self.all_values.get(value):
@@ -587,9 +616,9 @@ class BSTVisualizer:
                 while diff_parent:
                     if diff_parent is not None and diff_parent is not self.root:
                         if diff_parent.is_right_son == 1:
-                            self.__fix_position(diff_parent, 2*-NODE_R)
+                            self.__fix_position(diff_parent, 2 * -NODE_R)
                         else:
-                            self.__fix_position(diff_parent,2*NODE_R)
+                            self.__fix_position(diff_parent, 2 * NODE_R)
                     diff_parent = self.__diff_parent(diff_parent)
             self.all_nodes = pygame.sprite.Group()
             self.__draw_new_nodes(self.root)
@@ -608,8 +637,6 @@ class BSTVisualizer:
 
     def __swap_node(self, src: BSTNode, dst: BSTNode):
         pass
-
-
 
         ################################
         # don't forget to delete edges #
@@ -672,9 +699,9 @@ class BSTVisualizer:
             temp = root.right
             while temp.left:
                 temp = temp.left
-            new_node = BSTNode(root.center,temp.value,root.left,root.right,root.parent)
+            new_node = BSTNode(root.center, temp.value, root.left, root.right, root.parent)
             new_node.right = self.__delete_node_avl_helper(root.right,
-                                                      temp.value, bro)
+                                                           temp.value, bro)
             del root
             root = new_node
         return root
@@ -697,7 +724,7 @@ class BSTVisualizer:
         root.clicked_off()
         X, Y = root.center
         self.all_nodes.add(root)
-        if not (self.menu.get_position()[0] - NODE_R > X > 0 + NODE_R and Y < SCREEN_SIZE[1]):#or root.parent is not None and not root.parent.draw:
+        if not (self.menu.get_position()[0] - NODE_R > X > 0 + NODE_R and Y < SCREEN_SIZE[1]):  # or root.parent is not None and not root.parent.draw:
             root.hide_node()
         self.__draw_new_nodes(root.left)
         self.__draw_new_nodes(root.right)
@@ -741,9 +768,30 @@ class BSTVisualizer:
 
     def __delete_node(self):
         text_input: pygame_menu.widgets.widget.textinput.TextInput = self.menu.get_widget('text_input')
+        if self.root is None:
+            self.__error_message.enable()
+            self.__error_message.get_widget('error_message').set_title('The Tree Is Empty')
+            while self.__error_message.is_enabled():
+                self.__error_message.mainloop(self.window_surface, disable_loop=False)
+            text_input.clear()
+            return
         if not text_input.get_value().isnumeric():
+            self.__error_message.enable()
+            e: pygame_menu.widgets.widget.label.Label = self.__error_message.get_widget('error_message')
+            e.set_title('Value must be an integer')
+            while self.__error_message.is_enabled():
+                self.__error_message.mainloop(self.window_surface, disable_loop=False)
+            text_input.clear()
             return
         value = int(text_input.get_value())
+        if value > 9999 or value < -9999:
+            self.__error_message.enable()
+            e: pygame_menu.widgets.widget.label.Label = self.__error_message.get_widget('error_message')
+            e.set_title('Value must be between -9999 to 9999')
+            while self.__error_message.is_enabled():
+                self.__error_message.mainloop(self.window_surface, disable_loop=False)
+            text_input.clear()
+            return
         text_input.clear()
         if self.all_values.get(value):
             bro: list[BSTNode] = []
@@ -767,16 +815,21 @@ class BSTVisualizer:
             # answer: BSTNode | bool = self.__check_collision()
             # if answer:
             #     self.__avoid_collision(self.root)
+        else:
+            self.__error_message.enable()
+            self.__error_message.get_widget('error_message').set_title(f'{value} Is Not In The Tree')
+            while self.__error_message.is_enabled():
+                self.__error_message.mainloop(self.window_surface, disable_loop=False)
 
     def __Inorder(self, root: BSTNode, result: list[str]):
         if root is None:
             return result
-        self.__Inorder(root.left,result)
+        self.__Inorder(root.left, result)
         result.append(str(root))
         root.paint_node(ORANGE)
         self.__refresh_screen([])
         pygame.time.delay(self.animation_speed)
-        self.__Inorder(root.right,result)
+        self.__Inorder(root.right, result)
         return result
 
     def __Preorder(self, root: BSTNode, result: list[str]):
@@ -786,15 +839,15 @@ class BSTVisualizer:
         root.paint_node(ORANGE)
         self.__refresh_screen([])
         pygame.time.delay(self.animation_speed)
-        self.__Preorder(root.left,result)
+        self.__Preorder(root.left, result)
         self.__Preorder(root.right, result)
         return result
 
     def __Postorder(self, root: BSTNode, result: list[str]):
         if root is None:
             return result
-        self.__Postorder(root.left,result)
-        self.__Postorder(root.right,result)
+        self.__Postorder(root.left, result)
+        self.__Postorder(root.right, result)
         result.append(str(root))
         root.paint_node(ORANGE)
         self.__refresh_screen([])
@@ -808,6 +861,45 @@ class BSTVisualizer:
         self.all_nodes.draw(self.window_surface)
         self.all_edges.draw(self.window_surface)
         pygame.display.update()
+
+    def __traversal_activation(self):
+        w: pygame_menu.widgets.widget.dropselect.DropSelect = self.menu.get_widget('dropselect')
+        if self.root is None:
+            self.__error_message.enable()
+            while self.__error_message.is_enabled():
+                self.__error_message.mainloop(self.window_surface, disable_loop=False)
+            return
+
+        def traversal_shower(which_traversal, result):
+            self.__traversal_shower.set_title(which_traversal)
+            self.__traversal_shower.get_widget('traversal_shower').set_title(', '.join(result))
+            self.__traversal_shower.enable()
+            while self.__traversal_shower.is_enabled():
+                self.__traversal_shower.mainloop(self.window_surface, disable_loop=False)
+
+        try:
+            val = w.get_value()
+            traversal, result = None, None
+            if val[0][0] == 'Inorder':
+                traversal, result = 'Inorder', self.__Inorder(root=self.root, result=[])
+            elif val[0][0] == 'PreOrder':
+                traversal, result = 'PreOrder', self.__Preorder(root=self.root, result=[])
+            elif val[0][0] == 'PostOrder':
+                traversal, result = 'PostOrder', self.__Postorder(root=self.root, result=[])
+            if traversal and result:
+                traversal_shower(traversal, result)
+
+            for node in self.all_nodes:
+                node.clicked_off()
+
+        except Exception:
+            self.__error_message.enable()
+            w: pygame_menu.widgets.widget.label.Label = self.__error_message.get_widget('error_message')
+            w.set_title('You Must Select An Option')
+            while self.__error_message.is_enabled():
+                self.__error_message.mainloop(self.window_surface, disable_loop=False)
+            return
+            # pass
 
     def run(self):
         while True:

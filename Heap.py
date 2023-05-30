@@ -334,8 +334,13 @@ class HeapVisualizer:
         self.heap.swap_heaps_for_algorithm()
     def __add_helper(self,value : int):
         if value > 9999 or value < -9999:
+            self.__error_message.enable()
+            w: pygame_menu.widgets.widget.label.Label = self.__error_message.get_widget('error_message')
+            w.set_title('Value must be between -9999 to 9999')
+            while self.__error_message.is_enabled():
+                self.__error_message.mainloop(self.window_surface, disable_loop=False)
+            self.menu.get_widget('text_input').clear()
             return
-
         if value in self.all_values:
             return
         self.__deleteTree(self.root)
@@ -363,10 +368,16 @@ class HeapVisualizer:
                 for val in value:
                     self.__add_helper(val)
             if not isinstance(value,int):
-                raise ValueError("Gonen")
+                raise ValueError()
         except Exception:
+            self.__error_message.enable()
+            e: pygame_menu.widgets.widget.label.Label = self.__error_message.get_widget('error_message')
+            e.set_title('Value must be an integer or a list of integers')
+            while self.__error_message.is_enabled():
+                self.__error_message.mainloop(self.window_surface, disable_loop=False)
             text_input.clear()
             return
+
         text_input.clear()
         self.__add_helper(value)
 
@@ -387,9 +398,11 @@ class HeapVisualizer:
     def __delete_node(self):
         if self.num_of_elements == 0:
             self.__error_message.enable()
-            self.__error_message.set_title("The Heap is Empty")
+            w: pygame_menu.widgets.widget.label.Label = self.__error_message.get_widget('error_message')
+            w.set_title('The Heap Is Empty')
             while self.__error_message.is_enabled():
                 self.__error_message.mainloop(self.window_surface, disable_loop=False)
+            return
         if self.num_of_elements > 0:
             top = self.heap.remove()
             self.all_values.remove(top)
@@ -418,9 +431,16 @@ class HeapVisualizer:
             self.menu.get_widget('delete').set_title('Pop Min')
         else:
             self.menu.get_widget('delete').set_title('Pop Max')
-        self.__clear_heap()
+        self.__clear_heap(False)
 
-    def __clear_heap(self):
+    def __clear_heap(self, show_error=True):
+        if self.num_of_elements == 0 and show_error:
+            self.__error_message.enable()
+            w: pygame_menu.widgets.widget.label.Label = self.__error_message.get_widget('error_message')
+            w.set_title('The Heap Is Empty')
+            while self.__error_message.is_enabled():
+                self.__error_message.mainloop(self.window_surface, disable_loop=False)
+            return
         self.heap = Heap(100,is_min=self.is_MIN)
         self.num_of_elements = 0
         self.all_values = set()
@@ -512,9 +532,9 @@ class HeapVisualizer:
                                    font_size=20, font_color=BLACK_COLOR, label_id='speed_label')
         btn6.translate(0, -400)
         btn7.translate(0, -405)
-        self.__error_message = pygame_menu.Menu('', 450, 200, theme=theme,
+        self.__error_message = pygame_menu.Menu('Error!', 550, 200, theme=theme,
                                           mouse_motion_selection=True, center_content=False)
-        self.__error_message.add.label('', font_size=25, font_color=BLACK_COLOR,label_id='traversal_shower')
+        self.__error_message.add.label('The Heap Is Empty', font_size=25, font_color=BLACK_COLOR, label_id='error_message')
 
         def error():
             self.__error_message.disable()

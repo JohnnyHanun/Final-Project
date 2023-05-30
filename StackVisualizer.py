@@ -164,7 +164,7 @@ class StackVisualizer:
         btn4.set_onmouseleave(button_onmouseleave)
         btn4.translate(0, 60 + 50)
 
-        btn6 = self.menu.add.range_slider('', 10, (0, 50), 1,
+        btn6 = self.menu.add.range_slider('', 10, (0, 200), 1,
                                           font_color=BLACK_COLOR,
                                           background_color=WHITE_COLOR,
                                           width=200,
@@ -175,15 +175,15 @@ class StackVisualizer:
                                           value_format=lambda x: str(int(x)))
 
         btn6.set_onchange(self.__set_animation_speed)
-        btn7 = self.menu.add.label('Animation Speed: ' + str(2000 - self.animation_speed),
+        btn7 = self.menu.add.label('Animation Speed: ' + str(self.animation_speed),
                                    font_size=20, font_color=BLACK_COLOR, label_id='speed_label')
         btn6.translate(0, -400)
         btn7.translate(0, -405)
         ############ Error Menu ############
 
-        self.__submenu = pygame_menu.Menu('Error!', 450, 200, theme=theme,
+        self.__submenu = pygame_menu.Menu('Error!', 550, 200, theme=theme,
                                           mouse_motion_selection=True, center_content=False)
-        self.__submenu.add.label('Stack is empty', font_size=40, font_color=BLACK_COLOR)
+        self.__submenu.add.label('Stack Is Empty', font_size=25, font_color=BLACK_COLOR,label_id='error_message')
 
         def error():
             self.__submenu.disable()
@@ -198,13 +198,34 @@ class StackVisualizer:
         ############ Error Menu ############
 
     def __set_animation_speed(self, *args):
-        self.animation_speed = int(args[0])
+        self.animation_speed = 2000 - int(args[0])
         text_input: pygame_menu.widgets.widget.label.Label = self.menu.get_widget('speed_label')
-        text_input.set_title('Animation Speed: ' + str(self.animation_speed))
+        text_input.set_title('Animation Speed: ' + str(2000 - self.animation_speed))
 
     def push(self) -> None:
         text_input: pygame_menu.widgets.widget.textinput.TextInput = self.menu.get_widget('text_input')
         value = text_input.get_value()
+        if not text_input.get_value().isnumeric():
+            self.__submenu.enable()
+            e: pygame_menu.widgets.widget.label.Label = self.__submenu.get_widget('error_message')
+            e.set_title('Value must be an integer')
+            while self.__submenu.is_enabled():
+                self.__submenu.mainloop(self.window_surface, disable_loop=False)
+            text_input.clear()
+            return
+        try:
+            value_int = int(value)
+        except ValueError:
+            text_input.clear()
+            return
+        if value_int > 9999 or value_int < -9999:
+            self.__submenu.enable()
+            e: pygame_menu.widgets.widget.label.Label = self.__submenu.get_widget('error_message')
+            e.set_title('Value must be between -9999 and 9999')
+            while self.__submenu.is_enabled():
+                self.__submenu.mainloop(self.window_surface, disable_loop=False)
+            text_input.clear()
+            return
         if len(value) <= self.limit and value != "":
             COLOR = ELEMENT_COLOR1 if (self.element_tracker % TEN) % 2 == 0 else ELEMENT_COLOR2
             self.element_tracker += 1
@@ -218,6 +239,8 @@ class StackVisualizer:
     def pop(self):
         if not self.stack:
             self.__submenu.enable()
+            e: pygame_menu.widgets.widget.label.Label = self.__submenu.get_widget('error_message')
+            e.set_title('Stack Is Empty')
             while self.__submenu.is_enabled():
                 self.__submenu.mainloop(self.window_surface, disable_loop=False)
             return
@@ -247,6 +270,8 @@ class StackVisualizer:
     def __clear_stack(self):
         if not self.stack:
             self.__submenu.enable()
+            e: pygame_menu.widgets.widget.label.Label = self.__submenu.get_widget('error_message')
+            e.set_title('Stack Is Empty')
             while self.__submenu.is_enabled():
                 self.__submenu.mainloop(self.window_surface, disable_loop=False)
             return
