@@ -240,6 +240,10 @@ class StackVisualizer:
             return
 
     def pop(self):
+        text_input: pygame_menu.widgets.widget.textinput.TextInput = self.menu.get_widget('text_input')
+        value = text_input.get_value()
+        if len(value) == 0:
+            return
         if not self.stack:
             self.__submenu.enable()
             e: pygame_menu.widgets.widget.label.Label = self.__submenu.get_widget('error_message')
@@ -271,6 +275,10 @@ class StackVisualizer:
         pygame.display.update()
 
     def __clear_stack(self):
+        text_input: pygame_menu.widgets.widget.textinput.TextInput = self.menu.get_widget('text_input')
+        value = text_input.get_value()
+        if len(value) == 0:
+            return
         if not self.stack:
             self.__submenu.enable()
             e: pygame_menu.widgets.widget.label.Label = self.__submenu.get_widget('error_message')

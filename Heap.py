@@ -398,6 +398,10 @@ class HeapVisualizer:
         return lst
 
     def __delete_node(self):
+        text_input: pygame_menu.widgets.widget.textinput.TextInput = self.menu.get_widget('text_input')
+        value = text_input.get_value()
+        if len(value) == 0:
+            return
         if self.num_of_elements == 0:
             self.__error_message.enable()
             w: pygame_menu.widgets.widget.label.Label = self.__error_message.get_widget('error_message')
@@ -436,6 +440,10 @@ class HeapVisualizer:
         self.__clear_heap(False)
 
     def __clear_heap(self, show_error=True):
+        text_input: pygame_menu.widgets.widget.textinput.TextInput = self.menu.get_widget('text_input')
+        value = text_input.get_value()
+        if len(value) == 0:
+            return
         if self.num_of_elements == 0 and show_error:
             self.__error_message.enable()
             w: pygame_menu.widgets.widget.label.Label = self.__error_message.get_widget('error_message')

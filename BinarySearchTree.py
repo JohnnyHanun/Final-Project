@@ -679,6 +679,10 @@ class BSTVisualizer:
         self.__fix_position_subtree(root.right)
 
     def __delete_node_helper(self, root: BSTNode, value: int, bro: list[BSTNode]):
+        text_input: pygame_menu.widgets.widget.textinput.TextInput = self.menu.get_widget('text_input')
+        value = text_input.get_value()
+        if len(value) == 0:
+            return
         if root is None:
             return None
         if value < root.value:
