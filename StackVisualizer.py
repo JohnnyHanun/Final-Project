@@ -205,7 +205,10 @@ class StackVisualizer:
     def push(self) -> None:
         text_input: pygame_menu.widgets.widget.textinput.TextInput = self.menu.get_widget('text_input')
         value = text_input.get_value()
-        if not text_input.get_value().isnumeric():
+        if len(value) == 0:
+            return
+        if not value.isnumeric():
+            print('not numeric',type(value))
             self.__submenu.enable()
             e: pygame_menu.widgets.widget.label.Label = self.__submenu.get_widget('error_message')
             e.set_title('Value must be an integer')

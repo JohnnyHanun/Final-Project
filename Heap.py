@@ -362,6 +362,8 @@ class HeapVisualizer:
     def __add(self):
         text_input: pygame_menu.widgets.widget.textinput.TextInput = self.menu.get_widget('text_input')
         value = text_input.get_value()
+        if len(value) == 0:
+            return
         try:
             value = eval(value) if value else ""
             if isinstance(value,list) and all(isinstance(i,int) for i in value):
