@@ -207,28 +207,27 @@ class StackVisualizer:
         value = text_input.get_value()
         if len(value) == 0:
             return
-        if not value.isnumeric():
-            print('not numeric',type(value))
+        if len(value) > self.limit:
             self.__submenu.enable()
             e: pygame_menu.widgets.widget.label.Label = self.__submenu.get_widget('error_message')
-            e.set_title('Value must be an integer')
+            e.set_title(f'Value must shorter than {len(value)} the limit is {self.limit}')
             while self.__submenu.is_enabled():
                 self.__submenu.mainloop(self.window_surface, disable_loop=False)
             text_input.clear()
             return
-        try:
-            value_int = int(value)
-        except ValueError:
-            text_input.clear()
-            return
-        if value_int > 9999 or value_int < -9999:
-            self.__submenu.enable()
-            e: pygame_menu.widgets.widget.label.Label = self.__submenu.get_widget('error_message')
-            e.set_title('Value must be between -9999 and 9999')
-            while self.__submenu.is_enabled():
-                self.__submenu.mainloop(self.window_surface, disable_loop=False)
-            text_input.clear()
-            return
+        # try:
+        #     value_int = int(value)
+        # except ValueError:
+        #     text_input.clear()
+        #     return
+        # if value_int > 9999 or value_int < -9999:
+        #     self.__submenu.enable()
+        #     e: pygame_menu.widgets.widget.label.Label = self.__submenu.get_widget('error_message')
+        #     e.set_title('Value must be between -9999 and 9999')
+        #     while self.__submenu.is_enabled():
+        #         self.__submenu.mainloop(self.window_surface, disable_loop=False)
+        #     text_input.clear()
+        #     return
         if len(value) <= self.limit and value != "":
             COLOR = ELEMENT_COLOR1 if (self.element_tracker % TEN) % 2 == 0 else ELEMENT_COLOR2
             self.element_tracker += 1
@@ -240,10 +239,6 @@ class StackVisualizer:
             return
 
     def pop(self):
-        text_input: pygame_menu.widgets.widget.textinput.TextInput = self.menu.get_widget('text_input')
-        value = text_input.get_value()
-        if len(value) == 0:
-            return
         if not self.stack:
             self.__submenu.enable()
             e: pygame_menu.widgets.widget.label.Label = self.__submenu.get_widget('error_message')
@@ -275,10 +270,6 @@ class StackVisualizer:
         pygame.display.update()
 
     def __clear_stack(self):
-        text_input: pygame_menu.widgets.widget.textinput.TextInput = self.menu.get_widget('text_input')
-        value = text_input.get_value()
-        if len(value) == 0:
-            return
         if not self.stack:
             self.__submenu.enable()
             e: pygame_menu.widgets.widget.label.Label = self.__submenu.get_widget('error_message')
