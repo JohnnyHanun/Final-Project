@@ -2,6 +2,7 @@
 
 •	Educational UI platform for visualizing data structures and simulation of algorithms.
 
-•	The platform implemented in Python and Pygame. 
+•	The platform implemented in Python and Pygame, with my partner Gonen Selner.
 
 •	Usage Will write more at the future (But Very intuitive and user friendly) #TBD
+
