@@ -481,35 +481,13 @@ class Graph_Simulator:
             v.center = (new_x, new_y)
             v.rect = v.surf.get_rect(center=v.center)
             self.__move_node(v)
-        # L0 = 250  # nominal distance in pixles
-        # K1, K2 = 10, 1  # force/distance
-        # V = 3  # pixel/frem
-        # TOL = 5
-        # for v in self.all_nodes:
-        #     fx, fy = 0, 0
-        #     for u in self.all_nodes:
-        #         if v == u:
-        #             continue
-        #         dx = u.center[0] - v.center[0]
-        #         dy = u.center[1] - v.center[1]
-        #         dist = math.sqrt((dx ** 2) + (dy ** 2)) + 1e-10
-        #         my_k = K1 if self.__is_an_edge(self.graph[u], v) else K2
-        #         if dist > L0 + TOL:
-        #             fx += my_k * (dx / dist)
-        #             fy += my_k * (dy / dist)
-        #         elif dist < L0 - TOL:
-        #             fx -= my_k * (dx / dist)
-        #             fy -= my_k * (dy / dist)
-        #     norm_f = math.sqrt((fx ** 2) + (fy ** 2)) + 1e-10
-        #     fx /= norm_f
-        #     fy /= norm_f
-        #     new_x = v.center[0] + (fx * V)
-        #     new_y = v.center[1] + (fy * V)
-        #     new_x = max(50, min(1024 - 50, new_x))
-        #     new_y = max(50, min(900 - 50, new_y))
-        #     v.center = (new_x, new_y)
-        #     v.rect = v.surf.get_rect(center=v.center)
-
+        self.__stablize()
+        
+    def __stablize(self):
+        self.window_surface.fill(BLACK_COLOR)
+        self.all_graph.draw(self.window_surface)
+        pygame.display.update()
+        self.clock.tick(144)
     def __is_in_node(self, position: tuple[int, int]):
         tmp_node = Node(position, None, False)
         node = pygame.sprite.spritecollideany(tmp_node, self.all_nodes)
@@ -641,33 +619,6 @@ class Graph_Simulator:
                     edge.surf.fill(BLACK_COLOR)
                     edge.draw()
 
-        # for node in self.graph.keys():
-        #     # self.__refresh_screen()
-        #     for node1 in self.graph[node]:
-        #         edge = self.graph[node][node1]
-        #         if node == global_node:
-        #             flag = True if self.__is_an_edge(self.graph[node1], node) else False
-        #             angle = 0 if (flag and not self.is_directed) or not flag else -25
-        #
-        #             start, end = self.__calc_position(edge.destination.center, node.center, angle)
-        #             end1, end2 = self.__calc_position(node.center, edge.destination.center, -angle)
-        #             edge.start_point = start
-        #             edge.end_point = end1
-        #             edge.surf.fill(BLACK_COLOR)
-        #             if self.is_directed:
-        #                 edge.draw(double_edge=flag)
-        #             else:
-        #                 edge.draw()
-        #         elif node1 == global_node:
-        #             flag = True if self.__is_an_edge(self.graph[global_node], node) else False
-        #             angle = 0 if (flag and not self.is_directed) or not flag else -25
-        #             start, end = self.__calc_position(node.center, edge.destination.center, -angle)
-        #             end1, end2 = self.__calc_position(edge.destination.center, node.center, angle)
-        #             edge.start_point = end1
-        #             edge.end_point = start
-        #             edge.surf.fill(BLACK_COLOR)
-        #             edge.draw()
-
     def __delete_node(self):
         nd = self.__is_in_node(pygame.mouse.get_pos())
         if nd:
@@ -685,11 +636,6 @@ class Graph_Simulator:
                     self.all_graph.remove(edge)
 
     def __refresh_screen(self):
-        # fnt = pygame.font.SysFont("Arial", 25)
-        # fps_string = "%.0f" % self.clock.get_fps()
-        # txt_surface = fnt.render(fps_string, True, WHITE_COLOR)
-        # self.stabling_graph()
-        # self.window_surface.blit(txt_surface, (0,0))
         self.clock.tick(144)
         self.all_graph.clear(self.window_surface, self.window_surface.copy())
         if self.stable:
